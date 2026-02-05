@@ -1,18 +1,9 @@
  import { Button } from "@/components/ui/button";
  import { Wallet, LogOut } from "lucide-react";
- import { usePeraWallet } from "@/hooks/usePeraWallet";
+ import { useWallet } from "@/hooks/usePeraWallet";
  
  export const ConnectWallet = () => {
-   const { accountAddress, isConnecting, isConnected, isReady, connect, disconnect, shortenAddress } = usePeraWallet();
- 
-   if (!isReady) {
-     return (
-       <Button disabled className="bg-secondary text-secondary-foreground font-semibold">
-         <Wallet className="w-4 h-4 mr-2" />
-         Loading...
-       </Button>
-     );
-   }
+   const { accountAddress, isConnecting, isConnected, connect, disconnect, shortenAddress } = useWallet();
  
    if (isConnected && accountAddress) {
      return (
