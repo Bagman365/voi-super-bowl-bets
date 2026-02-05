@@ -3,7 +3,16 @@
  import { usePeraWallet } from "@/hooks/usePeraWallet";
  
  export const ConnectWallet = () => {
-   const { accountAddress, isConnecting, isConnected, connect, disconnect, shortenAddress } = usePeraWallet();
+   const { accountAddress, isConnecting, isConnected, isReady, connect, disconnect, shortenAddress } = usePeraWallet();
+ 
+   if (!isReady) {
+     return (
+       <Button disabled className="bg-secondary text-secondary-foreground font-semibold">
+         <Wallet className="w-4 h-4 mr-2" />
+         Loading...
+       </Button>
+     );
+   }
  
    if (isConnected && accountAddress) {
      return (
