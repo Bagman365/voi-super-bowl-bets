@@ -57,7 +57,7 @@
                  className={trend === "up" ? "text-seahawks" : "text-accent"}
                >
                  {trend === "up" ? "+" : "-"}
-                 {trendAmount}% today
+                {Math.round(trendAmount)}% today
                </span>
              </div>
            </div>
@@ -73,7 +73,7 @@
                isSeahawks ? "text-seahawks" : "text-accent"
              }`}
            >
-             {probability}%
+            {Math.round(probability)}%
            </span>
          </div>
          <div className="probability-bar">
