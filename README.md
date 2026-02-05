@@ -1,73 +1,91 @@
-# Welcome to your Lovable project
+# Voi Network Prediction Market (Super Bowl Bets)
 
-## Project info
+A lightweight, on-chain prediction market application built for Voi Network, demonstrating how event-based markets can be implemented using AVM-compatible smart contracts.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## Overview
 
-There are several ways of editing your application.
+Super Bowl Bet Buddy is a proof-of-concept prediction market designed to showcase transparent, non-custodial betting mechanics on Voi Network.
 
-**Use Lovable**
+The application allows users to:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+* Connect a Voi-compatible wallet
+* Select an outcome in a prediction market (e.g. Team A vs Team B)
+* Place an on-chain bet
+* Receive automated payouts once the event outcome is resolved
 
-Changes made via Lovable will be committed automatically to this repo.
+The project emphasizes simplicity, composability, and clarity, making it easy to extend into broader use cases such as sports, governance, or financial prediction markets.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## How It Works
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Market Creation
 
-Follow these steps:
+A prediction market is defined with a fixed set of outcomes. Each outcome corresponds to its own on-chain pool.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Bet Placement
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Users deposit funds into the outcome they believe will win. All bets are recorded on-chain via smart contracts.
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Resolution
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+After the real-world event concludes, the market is resolved by setting the winning outcome.
 
-**Edit a file directly in GitHub**
+### Payouts
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Winning participants receive proportional payouts from the total pool. Losing stakes are redistributed to winners, subject to any protocol rules or fees.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Key Features
 
-## What technologies are used for this project?
+* Fully on-chain betting and settlement logic
+* Non-custodial fund management
+* Transparent pools and payout calculations
+* Simple user experience built with Lovable
+* AVM-compatible smart contract architecture
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Tech Stack
 
-## How can I deploy this project?
+* Blockchain: Voi Network (AVM-compatible Layer 1)
+* Smart Contracts: AVM smart contracts (ARC-style patterns)
+* Frontend: Lovable.app
+* Wallets: Voi-compatible wallets
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## Disclaimer
 
-Yes, you can!
+This application is experimental and provided for demonstration purposes only. It is not intended for real-money gambling, financial advice, or production use without proper audits, compliance review, and regulatory consideration.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Use at your own risk.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## Future Enhancements
+
+* Support for multiple concurrent markets
+* Oracle-based automated market resolution
+* Dynamic odds and AMM-style liquidity
+* DAO-governed market creation and parameters
+* Cross-chain prediction market support
+
+---
+
+## Contributing
+
+Contributions, feedback, and ideas are welcome. If you are interested in building on Voi Network or extending prediction market infrastructure, please open an issue or submit a pull request.
+
+---
+
+## License
+
+MIT License (or project-specific license if updated)
+
+---
+
+Built on Voi Network
