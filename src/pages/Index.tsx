@@ -70,8 +70,8 @@
          <div className="max-w-4xl mx-auto mt-8 animate-slide-up" style={{ animationDelay: "0.25s" }}>
            <div className="bg-card rounded-xl border border-border p-4">
              <div className="flex justify-between text-sm mb-2">
-               <span className="text-seahawks font-semibold">Seahawks {seahawksProb.toFixed(1)}%</span>
-               <span className="text-accent font-semibold">Patriots {patriotsProb.toFixed(1)}%</span>
+             <span className="text-seahawks font-semibold">Seahawks {Math.round(seahawksProb)}%</span>
+             <span className="text-accent font-semibold">Patriots {Math.round(patriotsProb)}%</span>
              </div>
              <div className="h-4 rounded-full bg-muted overflow-hidden flex">
                <div
