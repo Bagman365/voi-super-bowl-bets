@@ -10,10 +10,10 @@
    return (
      <div className="text-center mb-12 animate-slide-up">
        {/* Live Badge */}
-        <div className="hidden md:inline-flex items-center gap-2 bg-seahawks/10 border border-seahawks/30 rounded-full px-4 py-1.5 mb-6">
-          <span className="w-2 h-2 rounded-full bg-seahawks animate-pulse-glow" />
-          <span className="text-seahawks text-sm font-medium">Live Market</span>
-        </div>
+       <div className="inline-flex items-center gap-2 bg-seahawks/10 border border-seahawks/30 rounded-full px-4 py-1.5 mb-6">
+         <span className="w-2 h-2 rounded-full bg-seahawks animate-pulse-glow" />
+         <span className="text-seahawks text-sm font-medium">Live Market</span>
+       </div>
  
        {/* Title */}
        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
