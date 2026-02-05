@@ -41,7 +41,7 @@
        <div className="hero-glow glow-seahawks" />
        <div className="hero-glow glow-patriots" />
  
-       <div className="relative z-10 container mx-auto px-4 py-12 md:py-20">
+       <div className="relative z-10 container mx-auto px-4 pt-20 pb-12 md:py-20">
          <MarketHeader
            totalVolume="$2.4M"
            traders={12847}
