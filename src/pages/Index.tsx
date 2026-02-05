@@ -98,9 +98,14 @@
            </div>
          </div>
  
-         <MarketInfo />
-       </div>
-     </div>
+          <MarketInfo />
+
+          {/* Footer */}
+          <footer className="mt-16 text-center text-muted-foreground text-sm">
+            Powered by <span className="text-foreground font-medium">Dork Labs</span>
+          </footer>
+        </div>
+      </div>
    );
  };
  
