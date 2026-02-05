@@ -1,6 +1,7 @@
- import { useState } from "react";
- import { Button } from "@/components/ui/button";
- import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import seahawksHelmet from "@/assets/seahawks-helmet.png";
  
  interface TeamCardProps {
    team: "seahawks" | "patriots";
@@ -36,15 +37,13 @@
        {/* Team Header */}
        <div className="flex items-center justify-between mb-6">
          <div className="flex items-center gap-3">
-           <div
-             className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${
-               isSeahawks
-                 ? "bg-seahawks/20 text-seahawks"
-                 : "bg-accent/20 text-accent"
-             }`}
-           >
-             {isSeahawks ? "🦅" : "🏈"}
-           </div>
+            {isSeahawks ? (
+              <img src={seahawksHelmet} alt="Seahawks" className="w-12 h-12 object-contain" />
+            ) : (
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold bg-accent/20 text-accent">
+                🏈
+              </div>
+            )}
            <div>
              <h3 className="text-xl font-bold text-foreground">{name}</h3>
              <div className="flex items-center gap-2 text-sm">
