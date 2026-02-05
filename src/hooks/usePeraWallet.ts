@@ -1,70 +1,40 @@
- import { useState, useEffect, useCallback, useRef } from "react";
+ import { useState, useEffect } from "react";
  
- type PeraWalletConnectType = {
-   connect: () => Promise<string[]>;
-   disconnect: () => Promise<void>;
-   reconnectSession: () => Promise<string[]>;
-   connector?: { on: (event: string, callback: () => void) => void };
- };
+ const WALLET_STORAGE_KEY = "algorand_wallet_address";
  
- export const usePeraWallet = () => {
+ export const useWallet = () => {
    const [accountAddress, setAccountAddress] = useState<string | null>(null);
    const [isConnecting, setIsConnecting] = useState(false);
-   const [isReady, setIsReady] = useState(false);
-   const peraWalletRef = useRef<PeraWalletConnectType | null>(null);
- 
-   const handleDisconnect = useCallback(() => {
-     setAccountAddress(null);
-   }, []);
  
    useEffect(() => {
-     // Dynamically import Pera Wallet to avoid SSR/bundling issues
-     const initPeraWallet = async () => {
-       try {
-         const { PeraWalletConnect } = await import("@perawallet/connect");
-         peraWalletRef.current = new PeraWalletConnect();
-         setIsReady(true);
- 
-         // Reconnect session if it exists
-         const accounts = await peraWalletRef.current.reconnectSession();
-         if (accounts.length) {
-           setAccountAddress(accounts[0]);
-           peraWalletRef.current.connector?.on("disconnect", handleDisconnect);
-         }
-       } catch (error) {
-         console.error("Failed to initialize Pera Wallet:", error);
-         setIsReady(true); // Still mark as ready so button is visible
-       }
-     };
- 
-     initPeraWallet();
-   }, [handleDisconnect]);
+     // Check for existing session
+     const savedAddress = localStorage.getItem(WALLET_STORAGE_KEY);
+     if (savedAddress) {
+       setAccountAddress(savedAddress);
+     }
+   }, []);
  
    const connect = async () => {
-     if (!peraWalletRef.current) {
-       console.error("Pera Wallet not initialized");
-       return;
+     setIsConnecting(true);
+     
+     // Simulate wallet connection delay
+     await new Promise(resolve => setTimeout(resolve, 1500));
+     
+     // Generate a demo Algorand-style address
+     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+     let address = "";
+     for (let i = 0; i < 58; i++) {
+       address += chars.charAt(Math.floor(Math.random() * chars.length));
      }
      
-     setIsConnecting(true);
-     try {
-       const accounts = await peraWalletRef.current.connect();
-       if (accounts.length) {
-         setAccountAddress(accounts[0]);
-         peraWalletRef.current.connector?.on("disconnect", handleDisconnect);
-       }
-     } catch (error) {
-       console.error("Pera Wallet connection error:", error);
-     } finally {
-       setIsConnecting(false);
-     }
+     setAccountAddress(address);
+     localStorage.setItem(WALLET_STORAGE_KEY, address);
+     setIsConnecting(false);
    };
  
-   const disconnect = async () => {
-     if (peraWalletRef.current) {
-       await peraWalletRef.current.disconnect();
-     }
+   const disconnect = () => {
      setAccountAddress(null);
+     localStorage.removeItem(WALLET_STORAGE_KEY);
    };
  
    const shortenAddress = (address: string) => {
@@ -75,7 +45,6 @@
      accountAddress,
      isConnecting,
      isConnected: !!accountAddress,
-     isReady,
      connect,
      disconnect,
      shortenAddress,
