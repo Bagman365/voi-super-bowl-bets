@@ -3,6 +3,7 @@
  import { MarketHeader } from "@/components/MarketHeader";
  import { TeamCard } from "@/components/TeamCard";
  import { MarketInfo } from "@/components/MarketInfo";
+ import { ConnectWallet } from "@/components/ConnectWallet";
  import { toast } from "sonner";
  
  const Index = () => {
@@ -31,6 +32,11 @@
        />
        <div className="absolute inset-0 bg-background/80" />
        
+       {/* Connect Wallet Button - Top Right */}
+       <div className="absolute top-4 right-4 z-20">
+         <ConnectWallet />
+       </div>
+ 
        {/* Background Glows */}
        <div className="hero-glow glow-seahawks" />
        <div className="hero-glow glow-patriots" />
