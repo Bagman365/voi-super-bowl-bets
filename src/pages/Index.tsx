@@ -1,4 +1,5 @@
  import { useState } from "react";
+ import backgroundImage from "@/assets/background.png";
  import { MarketHeader } from "@/components/MarketHeader";
  import { TeamCard } from "@/components/TeamCard";
  import { MarketInfo } from "@/components/MarketInfo";
@@ -23,6 +24,13 @@
  
    return (
      <div className="min-h-screen bg-background relative overflow-hidden">
+       {/* Background Image */}
+       <div 
+         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+         style={{ backgroundImage: `url(${backgroundImage})` }}
+       />
+       <div className="absolute inset-0 bg-background/80" />
+       
        {/* Background Glows */}
        <div className="hero-glow glow-seahawks" />
        <div className="hero-glow glow-patriots" />
