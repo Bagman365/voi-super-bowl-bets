@@ -4,7 +4,7 @@ import { MarketHeader } from "@/components/MarketHeader";
 import { TeamCard } from "@/components/TeamCard";
 import { MarketInfo } from "@/components/MarketInfo";
 import { ConnectWallet } from "@/components/ConnectWallet";
-import { useKibisisWallet } from "@/hooks/useKibisisWallet";
+import { useWallet } from "@/hooks/useWallet";
 import { useMarketContract } from "@/hooks/useMarketContract";
 import { voiToMicroVoi } from "@/lib/voi";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ const Index = () => {
     isConnected,
     signTransactions,
     postTransactions,
-  } = useKibisisWallet();
+  } = useWallet();
 
   const {
     marketState,
@@ -36,7 +36,7 @@ const Index = () => {
     const teamName = wantSea ? "Seattle Seahawks" : "New England Patriots";
 
     if (!isConnected || !accountAddress) {
-      toast.error("Please connect your Kibisis wallet first.");
+      toast.error("Please connect your wallet first.");
       return;
     }
 
