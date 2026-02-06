@@ -1,9 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Wallet, LogOut } from "lucide-react";
-import { useVoiWallet } from "@/hooks/usePeraWallet";
+import { Wallet, LogOut, ExternalLink } from "lucide-react";
+import { useKibisisWallet } from "@/hooks/useKibisisWallet";
 
 export const ConnectWallet = () => {
-  const { accountAddress, isConnecting, isConnected, connect, disconnect, shortenAddress } = useVoiWallet();
+  const {
+    accountAddress,
+    isConnecting,
+    isConnected,
+    isAvailable,
+    connect,
+    disconnect,
+    shortenAddress,
+  } = useKibisisWallet();
 
   if (isConnected && accountAddress) {
     return (
@@ -32,8 +40,16 @@ export const ConnectWallet = () => {
       disabled={isConnecting}
       className="bg-seahawks hover:bg-seahawks/90 text-primary-foreground font-semibold"
     >
-      <Wallet className="w-4 h-4 mr-2" />
-      {isConnecting ? "Connecting to Voi..." : "Connect Voi Wallet"}
+      {isAvailable ? (
+        <Wallet className="w-4 h-4 mr-2" />
+      ) : (
+        <ExternalLink className="w-4 h-4 mr-2" />
+      )}
+      {isConnecting
+        ? "Connecting..."
+        : isAvailable
+        ? "Connect Kibisis"
+        : "Install Kibisis"}
     </Button>
   );
 };

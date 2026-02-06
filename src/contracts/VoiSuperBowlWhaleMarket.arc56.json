@@ -1,0 +1,91 @@
+{
+  "name": "VoiSuperBowlWhaleMarket",
+  "structs": {},
+  "methods": [
+    {
+      "name": "toggle_pause",
+      "args": [],
+      "returns": { "type": "void" },
+      "actions": { "create": [], "call": ["NoOp"] },
+      "readonly": false,
+      "desc": "Admin emergency stop."
+    },
+    {
+      "name": "get_price",
+      "args": [{ "type": "bool", "name": "want_sea" }],
+      "returns": { "type": "uint64" },
+      "actions": { "create": [], "call": ["NoOp"] },
+      "readonly": true,
+      "desc": "Calculates current ticket price based on market skew."
+    },
+    {
+      "name": "buy_shares",
+      "args": [
+        { "type": "pay", "name": "payment" },
+        { "type": "bool", "name": "want_sea" }
+      ],
+      "returns": { "type": "void" },
+      "actions": { "create": [], "call": ["NoOp"] },
+      "readonly": false,
+      "desc": "Allows users to buy tickets. Ensures house is always fully collateralized."
+    },
+    {
+      "name": "resolve_market",
+      "args": [{ "type": "uint64", "name": "winner_code" }],
+      "returns": { "type": "void" },
+      "actions": { "create": [], "call": ["NoOp"] },
+      "readonly": false,
+      "desc": "Admin calls this to settle the game. 1=SEA, 2=PAT."
+    },
+    {
+      "name": "withdraw_house_profit",
+      "args": [],
+      "returns": { "type": "void" },
+      "actions": { "create": [], "call": ["NoOp"] },
+      "readonly": false,
+      "desc": "Creator withdraws the 'Spread' and any remaining seed principal."
+    },
+    {
+      "name": "claim_winnings",
+      "args": [],
+      "returns": { "type": "void" },
+      "actions": { "create": [], "call": ["NoOp"] },
+      "readonly": false,
+      "desc": "Users call this after resolution to get their 1 VOI per share."
+    }
+  ],
+  "arcs": [22, 28],
+  "networks": {},
+  "state": {
+    "schema": {
+      "global": { "ints": 8, "bytes": 0 },
+      "local": { "ints": 0, "bytes": 0 }
+    },
+    "keys": {
+      "global": {
+        "total_sea_sold": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "dG90YWxfc2VhX3NvbGQ=" },
+        "total_pat_sold": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "dG90YWxfcGF0X3NvbGQ=" },
+        "is_resolved": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "aXNfcmVzb2x2ZWQ=" },
+        "market_paused": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "bWFya2V0X3BhdXNlZA==" },
+        "winner": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "d2lubmVy" },
+        "base_price": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "YmFzZV9wcmljZQ==" },
+        "skew_sensitivity": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "c2tld19zZW5zaXRpdml0eQ==" },
+        "max_bet_voi": { "keyType": "AVMString", "valueType": "AVMUint64", "key": "bWF4X2JldF92b2k=" }
+      },
+      "local": {},
+      "box": {}
+    },
+    "maps": {
+      "global": {},
+      "local": {},
+      "box": {
+        "balances_sea": { "keyType": "address", "valueType": "uint64", "prefix": "YmFsYW5jZXNfc2Vh" },
+        "balances_pat": { "keyType": "address", "valueType": "uint64", "prefix": "YmFsYW5jZXNfcGF0" }
+      }
+    }
+  },
+  "bareActions": {
+    "create": ["NoOp"],
+    "call": []
+  }
+}

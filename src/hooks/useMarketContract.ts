@@ -1,0 +1,257 @@
+import { useState, useEffect, useCallback } from "react";
+import algosdk from "algosdk";
+import { getAlgodClient, APP_ID, isContractDeployed, MICRO_VOI } from "@/lib/voi";
+import contractSpec from "@/contracts/VoiSuperBowlWhaleMarket.arc56.json";
+
+export interface MarketState {
+  totalSeaSold: bigint;
+  totalPatSold: bigint;
+  isResolved: boolean;
+  marketPaused: boolean;
+  winner: number; // 0=none, 1=SEA, 2=PAT
+  basePrice: bigint;
+  seaPrice: bigint;
+  patPrice: bigint;
+  seahawksProb: number;
+  patriotsProb: number;
+}
+
+const DEFAULT_MARKET_STATE: MarketState = {
+  totalSeaSold: BigInt(0),
+  totalPatSold: BigInt(0),
+  isResolved: false,
+  marketPaused: false,
+  winner: 0,
+  basePrice: BigInt(510_000), // 0.51 VOI
+  seaPrice: BigInt(510_000),
+  patPrice: BigInt(510_000),
+  seahawksProb: 52,
+  patriotsProb: 48,
+};
+
+// Build the ABI contract from the ARC56 spec
+const getABIContract = () => {
+  const methods = contractSpec.methods.map((m) => ({
+    name: m.name,
+    desc: m.desc,
+    args: m.args
+      .filter((a) => a.type !== "pay") // Filter out transaction args for ABI
+      .map((a) => ({ type: a.type, name: a.name })),
+    returns: { type: m.returns.type },
+  }));
+
+  return new algosdk.ABIContract({
+    name: contractSpec.name,
+    methods,
+  });
+};
+
+export const useMarketContract = () => {
+  const [marketState, setMarketState] = useState<MarketState>(DEFAULT_MARKET_STATE);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Calculate probability from share totals
+  const calculateProbability = (seaSold: bigint, patSold: bigint) => {
+    const total = Number(seaSold) + Number(patSold);
+    if (total === 0) return { seahawksProb: 52, patriotsProb: 48 }; // Default
+    const seahawksProb = Math.round((Number(seaSold) / total) * 100);
+    return {
+      seahawksProb: Math.max(1, Math.min(99, seahawksProb)),
+      patriotsProb: Math.max(1, Math.min(99, 100 - seahawksProb)),
+    };
+  };
+
+  // Fetch global state from the contract
+  const fetchMarketState = useCallback(async () => {
+    if (!isContractDeployed()) {
+      // Use mock state when contract is not deployed
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const algod = getAlgodClient();
+      const appInfo = await algod.getApplicationByID(APP_ID).do();
+      const globalState = appInfo.params?.["global-state"] || [];
+
+      const state: Partial<MarketState> = {};
+
+      for (const kv of globalState) {
+        const key = atob(kv.key);
+        const value = kv.value.uint || 0;
+
+        switch (key) {
+          case "total_sea_sold":
+            state.totalSeaSold = BigInt(value);
+            break;
+          case "total_pat_sold":
+            state.totalPatSold = BigInt(value);
+            break;
+          case "is_resolved":
+            state.isResolved = value === 1;
+            break;
+          case "market_paused":
+            state.marketPaused = value === 1;
+            break;
+          case "winner":
+            state.winner = value;
+            break;
+          case "base_price":
+            state.basePrice = BigInt(value);
+            break;
+        }
+      }
+
+      // Calculate dynamic prices using contract logic
+      const seaSold = state.totalSeaSold ?? BigInt(0);
+      const patSold = state.totalPatSold ?? BigInt(0);
+      const basePrice = state.basePrice ?? BigInt(510_000);
+
+      let seaPrice = basePrice;
+      let patPrice = basePrice;
+
+      if (seaSold > patSold) {
+        const lead = seaSold - patSold;
+        seaPrice = basePrice + (lead / BigInt(10_000)) * BigInt(10_000);
+      } else if (patSold > seaSold) {
+        const lead = patSold - seaSold;
+        patPrice = basePrice + (lead / BigInt(10_000)) * BigInt(10_000);
+      }
+
+      const probs = calculateProbability(seaSold, patSold);
+
+      setMarketState({
+        ...DEFAULT_MARKET_STATE,
+        ...state,
+        seaPrice,
+        patPrice,
+        ...probs,
+      });
+    } catch (err) {
+      console.error("Failed to fetch market state:", err);
+      setError("Failed to load market data from chain");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Build buy_shares transaction group
+  const buildBuySharesTxn = useCallback(
+    async (
+      senderAddress: string,
+      wantSea: boolean,
+      paymentAmountMicroVoi: bigint
+    ): Promise<Uint8Array[]> => {
+      if (!isContractDeployed()) {
+        throw new Error("Contract not yet deployed. Please check back later.");
+      }
+
+      const algod = getAlgodClient();
+      const suggestedParams = await algod.getTransactionParams().do();
+      const contract = getABIContract();
+
+      // 1. Payment transaction to the app address
+      const appAddr = algosdk.getApplicationAddress(APP_ID);
+      const payTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        sender: senderAddress,
+        receiver: appAddr,
+        amount: paymentAmountMicroVoi,
+        suggestedParams,
+      });
+
+      // 2. App call with buy_shares method
+      const method = contract.getMethodByName("buy_shares");
+      const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+        sender: senderAddress,
+        appIndex: APP_ID,
+        onComplete: algosdk.OnApplicationComplete.NoOpOC,
+        appArgs: [
+          method.getSelector(),
+          algosdk.ABIType.from("bool").encode(wantSea),
+        ],
+        suggestedParams,
+        // Box references for user balance storage
+        boxes: [
+          {
+            appIndex: APP_ID,
+            name: new Uint8Array([
+              ...new TextEncoder().encode(wantSea ? "balances_sea" : "balances_pat"),
+              ...algosdk.decodeAddress(senderAddress).publicKey,
+            ]),
+          },
+        ],
+      });
+
+      // Assign group ID
+      const txns = [payTxn, appCallTxn];
+      algosdk.assignGroupID(txns);
+
+      return txns.map((txn) => algosdk.encodeUnsignedTransaction(txn));
+    },
+    []
+  );
+
+  // Build claim_winnings transaction
+  const buildClaimWinningsTxn = useCallback(
+    async (senderAddress: string): Promise<Uint8Array[]> => {
+      if (!isContractDeployed()) {
+        throw new Error("Contract not yet deployed.");
+      }
+
+      const algod = getAlgodClient();
+      const suggestedParams = await algod.getTransactionParams().do();
+      const contract = getABIContract();
+      const method = contract.getMethodByName("claim_winnings");
+
+      const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
+        sender: senderAddress,
+        appIndex: APP_ID,
+        onComplete: algosdk.OnApplicationComplete.NoOpOC,
+        appArgs: [method.getSelector()],
+        suggestedParams,
+        boxes: [
+          {
+            appIndex: APP_ID,
+            name: new Uint8Array([
+              ...new TextEncoder().encode("balances_sea"),
+              ...algosdk.decodeAddress(senderAddress).publicKey,
+            ]),
+          },
+          {
+            appIndex: APP_ID,
+            name: new Uint8Array([
+              ...new TextEncoder().encode("balances_pat"),
+              ...algosdk.decodeAddress(senderAddress).publicKey,
+            ]),
+          },
+        ],
+      });
+
+      return [algosdk.encodeUnsignedTransaction(appCallTxn)];
+    },
+    []
+  );
+
+  // Poll market state
+  useEffect(() => {
+    fetchMarketState();
+
+    if (isContractDeployed()) {
+      const interval = setInterval(fetchMarketState, 15_000); // every 15s
+      return () => clearInterval(interval);
+    }
+  }, [fetchMarketState]);
+
+  return {
+    marketState,
+    isLoading,
+    error,
+    isDeployed: isContractDeployed(),
+    fetchMarketState,
+    buildBuySharesTxn,
+    buildClaimWinningsTxn,
+  };
+};
