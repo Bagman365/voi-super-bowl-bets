@@ -1,46 +1,59 @@
 
-# Go Live: Connect Frontend to Deployed Contract (App ID 48634015)
 
-## Overview
-Update the frontend to connect to the deployed smart contract on the Voi Network. This involves setting the App ID, fixing algosdk v3 API compatibility issues in the market contract hook, and removing the demo mode fallback.
+## Streamline Wallet to Voi Wallet Only
 
-## Changes
+Since you don't need Kibisis support, this plan replaces the dual-wallet system with a single, focused Voi Wallet integration that works correctly.
 
-### 1. Set the deployed App ID
-**File:** `src/lib/voi.ts`
-- Change `APP_ID` from `0` to `48634015`
-- This single change activates live contract reading (removes demo mode banner, enables real state polling)
+### What's Wrong Now
 
-### 2. Fix algosdk v3 API compatibility in useMarketContract
-**File:** `src/hooks/useMarketContract.ts`
+The current WalletConnect setup uses `algorand:mainnet-v1.0` as the chain ID, which is wrong for the Voi Network. The Voi Wallet expects `algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n` (derived from the Voi genesis hash). This mismatch is why connecting fails with a "Project not found" or session rejection error. Additionally, the WalletConnect Project ID is invalid/unregistered.
 
-The current `fetchMarketState` function uses algosdk v2 conventions that are incompatible with the installed algosdk v3. The following fixes are needed:
+### What Changes
 
-- **Global state access:** Change `appInfo.params?.["global-state"]` to `appInfo.params?.globalState` (v3 uses typed objects with camelCase properties instead of raw JSON)
-- **Key decoding:** Change `atob(kv.key)` to `new TextDecoder().decode(kv.key)` (v3 returns `Uint8Array` keys instead of base64 strings)
-- **Value reading:** Change `kv.value.uint || 0` to `Number(kv.value.uint ?? 0n)` (v3 returns `bigint` values)
+1. **Remove Kibisis** -- Delete the Kibisis wallet hook and its type definitions since you don't need it.
 
-### 3. Remove demo mode UI elements
-**File:** `src/pages/Index.tsx`
-- Remove the mock state logic (`mockSeahawksProb`, `setMockSeahawksProb`) since the contract is now live
-- Remove the demo purchase simulation in `handleBuy`
-- Remove the "smart contract not yet deployed" banner
-- Pass live contract data directly to TeamCard components
+2. **Fix the WalletConnect hook** -- Update `useWalletConnectWallet.ts` with:
+   - Correct Voi chain ID: `algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n`
+   - Correct WalletConnect methods matching what Voi Wallet expects: `algo_signTxn`
+   - Account format matching: `algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n:ADDRESS`
 
-### 4. Update TeamCard buy button states
-**File:** `src/components/TeamCard.tsx`
-- Since `isDeployed` will now always be `true`, simplify the disabled state and button text logic
-- Remove "Coming Soon" label — the button should say "Buy [Team] Shares" when wallet is connected
+3. **Simplify the wallet abstraction** -- Rewrite `useWallet.ts` to only wrap the WalletConnect wallet (no more provider switching logic). Keep the same external interface so nothing else breaks.
 
-## Technical Details
+4. **Simplify the Connect button** -- Replace the dropdown menu in `ConnectWallet.tsx` with a single "Connect Voi Wallet" button (no provider selection needed).
 
-### algosdk v3 Global State Structure
-In algosdk v3, `getApplicationByID(id).do()` returns an `Application` object:
-- `appInfo.params.globalState` is a `TealKeyValue[]`
-- Each item has `.key` (Uint8Array) and `.value` with `.uint` (bigint) and `.bytes` (Uint8Array)
+5. **WalletConnect Project ID** -- You'll still need a valid Project ID from [cloud.walletconnect.com](https://cloud.walletconnect.com). The current one is invalid. Once you have it, I'll swap it in.
 
-### Transaction Building
-The existing `buildBuySharesTxn` and `buildClaimWinningsTxn` functions use `makePaymentTxnWithSuggestedParamsFromObject`, `makeApplicationCallTxnFromObject`, `assignGroupID`, and `encodeUnsignedTransaction` -- all of which still exist in algosdk v3 with compatible signatures. No changes needed for transaction building.
+### What Stays the Same
 
-### Polling
-The 15-second polling interval for `fetchMarketState` will activate automatically once `APP_ID > 0`.
+- The `useMarketContract` hook, transaction building, and all market logic remain untouched
+- The wallet interface (`signTransactions`, `postTransactions`, `shortenAddress`) keeps the same shape
+- `Index.tsx` and all other pages/components require no changes
+
+---
+
+### Technical Details
+
+**Files to delete:**
+- `src/hooks/useKibisisWallet.ts`
+- `src/hooks/usePeraWallet.ts` (unused legacy file)
+- `src/types/kibisis.d.ts`
+
+**Files to modify:**
+
+`src/hooks/useWalletConnectWallet.ts`:
+- Change `VOI_CHAIN` from `"algorand:mainnet-v1.0"` to `"algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n"`
+- Update `requiredNamespaces` to include the correct chain and methods (`algo_signTxn`)
+- Update address parsing to handle the new chain ID format in account strings
+- Add `postTransactions` method (submit via algod, matching existing pattern)
+
+`src/hooks/useWallet.ts`:
+- Remove Kibisis imports and provider-switching logic
+- Wrap only `useWalletConnectWallet` directly
+- Keep the same return interface (`accountAddress`, `isConnected`, `signTransactions`, `postTransactions`, `shortenAddress`, etc.)
+
+`src/components/ConnectWallet.tsx`:
+- Remove dropdown menu and Kibisis option
+- Single button: "Connect Voi Wallet" that calls `connect()` directly
+- Remove `kibisisAvailable` and `activeProvider` references
+- Keep the connected state display (address + disconnect)
+
