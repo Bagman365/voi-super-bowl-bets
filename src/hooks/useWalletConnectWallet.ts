@@ -3,7 +3,7 @@ import SignClient from "@walletconnect/sign-client";
 import { WalletConnectModal } from "@walletconnect/modal";
 
 const WALLET_STORAGE_KEY = "wc_wallet_address";
-const WC_PROJECT_ID = "f926785421eb44088bbb2c89e24fcecd"; // Replace with valid Project ID from cloud.walletconnect.com
+const WC_PROJECT_ID = "01ac749bf63441041383f10bae35687c";
 
 // Voi Network chain ID derived from genesis hash
 const VOI_CHAIN = "algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n";
