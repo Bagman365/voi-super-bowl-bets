@@ -15,10 +15,7 @@
          <span className="text-seahawks text-sm font-medium">Live Market</span>
        </div>
  
-        {/* Brand + Title */}
-        <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground font-medium mb-2">
-          Flowbet
-        </p>
+        {/* Title */}
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
           🏈 Super Bowl 60 Winner
         </h1>

@@ -181,7 +181,12 @@ const Index = () => {
       />
       <div className="absolute inset-0 bg-background/80" />
 
-      {/* Connect Wallet Button - Top Right */}
+      {/* Top Bar: Flowbet brand + Connect Wallet */}
+      <div className="absolute top-4 left-4 z-20">
+        <span className="text-sm uppercase tracking-[0.3em] text-muted-foreground font-medium">
+          Flowbet
+        </span>
+      </div>
       <div className="absolute top-4 right-4 z-20">
         <ConnectWallet />
       </div>
