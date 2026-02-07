@@ -196,6 +196,9 @@ export const useMarketContract = (userAddress?: string) => {
       const suggestedParams = await algod.getTransactionParams().do();
       const contract = getABIContract();
 
+      // App call params with increased fee to cover box storage MBR
+      const appCallParams = { ...suggestedParams, flatFee: true, fee: 2000 };
+
       // 1. Payment transaction to the app address
       const appAddr = algosdk.getApplicationAddress(APP_ID);
       const payTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
@@ -205,7 +208,7 @@ export const useMarketContract = (userAddress?: string) => {
         suggestedParams,
       });
 
-      // 2. App call with buy_shares method
+      // 2. App call with buy_shares method (0.002 VOI fee for box storage)
       const method = contract.getMethodByName("buy_shares");
       const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
         sender: senderAddress,
@@ -215,7 +218,7 @@ export const useMarketContract = (userAddress?: string) => {
           method.getSelector(),
           algosdk.ABIType.from("bool").encode(wantSea),
         ],
-        suggestedParams,
+        suggestedParams: appCallParams,
         // Box references for user balance storage
         boxes: [
           {
@@ -249,12 +252,15 @@ export const useMarketContract = (userAddress?: string) => {
       const contract = getABIContract();
       const method = contract.getMethodByName("claim_winnings");
 
+      // Increased fee to cover box storage reads during claim
+      const appCallParams = { ...suggestedParams, flatFee: true, fee: 2000 };
+
       const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
         sender: senderAddress,
         appIndex: APP_ID,
         onComplete: algosdk.OnApplicationComplete.NoOpOC,
         appArgs: [method.getSelector()],
-        suggestedParams,
+        suggestedParams: appCallParams,
         boxes: [
           {
             appIndex: APP_ID,
