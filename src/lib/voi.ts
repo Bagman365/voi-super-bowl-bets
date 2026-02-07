@@ -11,7 +11,7 @@ export const VOI_NETWORK = {
 
 // App ID - Set this when the contract is deployed on Voi mainnet
 // Set to 0 to indicate "not yet deployed"
-export const APP_ID = 0;
+export const APP_ID = 48634015;
 
 // MicroVoi conversion (1 VOI = 1,000,000 MicroVoi)
 export const MICRO_VOI = 1_000_000;

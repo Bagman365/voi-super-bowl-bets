@@ -75,13 +75,13 @@ export const useMarketContract = () => {
     try {
       const algod = getAlgodClient();
       const appInfo = await algod.getApplicationByID(APP_ID).do();
-      const globalState = appInfo.params?.["global-state"] || [];
+      const globalState = (appInfo as any).params?.globalState ?? (appInfo as any).params?.["global-state"] ?? [];
 
       const state: Partial<MarketState> = {};
 
       for (const kv of globalState) {
-        const key = atob(kv.key);
-        const value = kv.value.uint || 0;
+        const key = kv.key instanceof Uint8Array ? new TextDecoder().decode(kv.key) : atob(kv.key);
+        const value = Number(kv.value.uint ?? 0n);
 
         switch (key) {
           case "total_sea_sold":

@@ -13,7 +13,6 @@ interface TeamCardProps {
   volume: string;
   trend: "up" | "down";
   trendAmount: number;
-  isDeployed: boolean;
   isWalletConnected: boolean;
   onBuy: (amountVoi: number) => Promise<void>;
 }
@@ -26,7 +25,6 @@ export const TeamCard = ({
   volume,
   trend,
   trendAmount,
-  isDeployed,
   isWalletConnected,
   onBuy,
 }: TeamCardProps) => {
@@ -142,7 +140,7 @@ export const TeamCard = ({
 
         <Button
           onClick={handleBuy}
-          disabled={isBuying || (!isDeployed && !isWalletConnected)}
+          disabled={isBuying || !isWalletConnected}
           className={`w-full h-12 font-bold text-base ${
             isSeahawks
               ? "bg-seahawks hover:bg-seahawks/90 text-primary-foreground"
@@ -156,8 +154,6 @@ export const TeamCard = ({
             </>
           ) : !isWalletConnected ? (
             "Connect Wallet to Buy"
-          ) : !isDeployed ? (
-            "Coming Soon"
           ) : (
             `Buy ${name} Shares`
           )}
