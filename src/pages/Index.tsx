@@ -1,4 +1,3 @@
-import { useState } from "react";
 import backgroundImage from "@/assets/background.png";
 import { MarketHeader } from "@/components/MarketHeader";
 import { TeamCard } from "@/components/TeamCard";
@@ -19,17 +18,12 @@ const Index = () => {
 
   const {
     marketState,
-    isDeployed,
     buildBuySharesTxn,
     fetchMarketState,
   } = useMarketContract();
 
-  // Local mock state for when contract isn't deployed
-  const [mockSeahawksProb, setMockSeahawksProb] = useState(52);
-  const mockPatriotsProb = 100 - mockSeahawksProb;
-
-  const seahawksProb = isDeployed ? marketState.seahawksProb : mockSeahawksProb;
-  const patriotsProb = isDeployed ? marketState.patriotsProb : mockPatriotsProb;
+  const seahawksProb = marketState.seahawksProb;
+  const patriotsProb = marketState.patriotsProb;
 
   const handleBuy = async (team: "seahawks" | "patriots", amountVoi: number) => {
     const wantSea = team === "seahawks";
@@ -37,19 +31,6 @@ const Index = () => {
 
     if (!isConnected || !accountAddress) {
       toast.error("Please connect your wallet first.");
-      return;
-    }
-
-    if (!isDeployed) {
-      // Mock purchase for demo
-      toast.success(`Demo: Purchased ${amountVoi} VOI of ${teamName} shares!`, {
-        description: "Contract not yet deployed — this is a simulation.",
-      });
-      if (wantSea) {
-        setMockSeahawksProb((prev) => Math.min(95, prev + Math.random() * 2));
-      } else {
-        setMockSeahawksProb((prev) => Math.max(5, prev - Math.random() * 2));
-      }
       return;
     }
 
@@ -98,28 +79,16 @@ const Index = () => {
           endDate="Feb 9, 2026"
         />
 
-        {/* Contract Status Banner */}
-        {!isDeployed && (
-          <div className="max-w-4xl mx-auto mb-6">
-            <div className="bg-seahawks/10 border border-seahawks/30 rounded-lg px-4 py-2 text-center">
-              <span className="text-seahawks text-sm">
-                🔧 Smart contract not yet deployed — showing demo data
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Team Cards */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <TeamCard
             team="seahawks"
             name="Seattle Seahawks"
             probability={seahawksProb}
-            sharePriceMicroVoi={isDeployed ? marketState.seaPrice : BigInt(510_000)}
+            sharePriceMicroVoi={marketState.seaPrice}
             volume="$1.2M"
             trend="up"
             trendAmount={3.2}
-            isDeployed={isDeployed}
             isWalletConnected={isConnected}
             onBuy={(amount) => handleBuy("seahawks", amount)}
           />
@@ -127,11 +96,10 @@ const Index = () => {
             team="patriots"
             name="New England Patriots"
             probability={patriotsProb}
-            sharePriceMicroVoi={isDeployed ? marketState.patPrice : BigInt(510_000)}
+            sharePriceMicroVoi={marketState.patPrice}
             volume="$1.2M"
             trend="down"
             trendAmount={3.2}
-            isDeployed={isDeployed}
             isWalletConnected={isConnected}
             onBuy={(amount) => handleBuy("patriots", amount)}
           />
