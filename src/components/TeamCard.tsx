@@ -17,7 +17,7 @@ interface TeamCardProps {
   userShares: bigint;
   isResolved: boolean;
   isWinner: boolean;
-  onBuy: (amountVoi: number) => Promise<void>;
+  onBuy: (amountVoi: number) => void | Promise<void>;
 }
 
 export const TeamCard = ({

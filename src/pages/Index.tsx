@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import backgroundImage from "@/assets/background.png";
 import { MarketHeader } from "@/components/MarketHeader";
 import { TeamCard } from "@/components/TeamCard";
@@ -6,6 +6,7 @@ import { ClaimWinnings } from "@/components/ClaimWinnings";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { MarketInfo } from "@/components/MarketInfo";
 import { ConnectWallet } from "@/components/ConnectWallet";
+import { ConfirmTransactionModal, ConfirmBuyDetails } from "@/components/ConfirmTransactionModal";
 import { useWallet } from "@/hooks/useWallet";
 import { useMarketContract } from "@/hooks/useMarketContract";
 import { voiToMicroVoi, microVoiToVoi } from "@/lib/voi";
@@ -35,13 +36,16 @@ const Index = () => {
   const seahawksProb = marketState.seahawksProb;
   const patriotsProb = marketState.patriotsProb;
 
+  // Confirmation modal state
+  const [confirmDetails, setConfirmDetails] = useState<ConfirmBuyDetails | null>(null);
+  const [pendingBuy, setPendingBuy] = useState<{ team: "seahawks" | "patriots"; amountVoi: number } | null>(null);
+
   // Compute on-chain derived stats
   const { totalVolumeFormatted, totalSharesFormatted, seaSkew, patSkew } = useMemo(() => {
     const seaSold = Number(marketState.totalSeaSold);
     const patSold = Number(marketState.totalPatSold);
     const totalShares = seaSold + patSold;
 
-    // Approximate total volume: shares * base price (rough estimate)
     const baseVoi = microVoiToVoi(marketState.basePrice);
     const totalVolumeVoi = totalShares * baseVoi;
 
@@ -51,7 +55,6 @@ const Index = () => {
       return `${voi.toFixed(0)} VOI`;
     };
 
-    // Skew: how far each team's probability deviates from 50%
     const seaDeviation = Math.abs(seahawksProb - 50);
     const patDeviation = Math.abs(patriotsProb - 50);
 
@@ -98,14 +101,38 @@ const Index = () => {
     }
   };
 
-  const handleBuy = async (team: "seahawks" | "patriots", amountVoi: number) => {
+  // Opens the confirmation modal instead of immediately buying
+  const handleBuyRequest = useCallback(
+    (team: "seahawks" | "patriots", amountVoi: number) => {
+      if (!isConnected || !accountAddress) {
+        toast.error("Please connect your wallet first.");
+        return;
+      }
+
+      const wantSea = team === "seahawks";
+      const teamName = wantSea ? "Seattle Seahawks" : "New England Patriots";
+      const sharePriceMicroVoi = wantSea ? marketState.seaPrice : marketState.patPrice;
+      const probability = wantSea ? seahawksProb : patriotsProb;
+
+      setConfirmDetails({
+        team,
+        teamName,
+        amountVoi,
+        sharePriceMicroVoi,
+        probability,
+      });
+      setPendingBuy({ team, amountVoi });
+    },
+    [isConnected, accountAddress, marketState, seahawksProb, patriotsProb]
+  );
+
+  // Executes the actual buy after user confirms in the modal
+  const executeBuy = useCallback(async () => {
+    if (!pendingBuy || !accountAddress) return;
+
+    const { team, amountVoi } = pendingBuy;
     const wantSea = team === "seahawks";
     const teamName = wantSea ? "Seattle Seahawks" : "New England Patriots";
-
-    if (!isConnected || !accountAddress) {
-      toast.error("Please connect your wallet first.");
-      return;
-    }
 
     try {
       const microVoi = voiToMicroVoi(amountVoi);
@@ -124,7 +151,12 @@ const Index = () => {
       const { title, description } = classifyTransactionError(error);
       toast.error(title, { description });
     }
-  };
+  }, [pendingBuy, accountAddress, buildBuySharesTxn, signTransactions, postTransactions, fetchMarketState, fetchUserBalances]);
+
+  const closeConfirmModal = useCallback(() => {
+    setConfirmDetails(null);
+    setPendingBuy(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -168,7 +200,7 @@ const Index = () => {
             userShares={userBalances.seaShares}
             isResolved={marketState.isResolved}
             isWinner={winnerTeam === "seahawks"}
-            onBuy={(amount) => handleBuy("seahawks", amount)}
+            onBuy={(amount) => handleBuyRequest("seahawks", amount)}
           />
           <TeamCard
             team="patriots"
@@ -182,7 +214,7 @@ const Index = () => {
             userShares={userBalances.patShares}
             isResolved={marketState.isResolved}
             isWinner={winnerTeam === "patriots"}
-            onBuy={(amount) => handleBuy("patriots", amount)}
+            onBuy={(amount) => handleBuyRequest("patriots", amount)}
           />
         </div>
 
@@ -233,6 +265,14 @@ const Index = () => {
           Powered by <span className="text-foreground font-medium">Dork Labs</span>
         </footer>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmTransactionModal
+        details={confirmDetails}
+        open={!!confirmDetails}
+        onClose={closeConfirmModal}
+        onConfirm={executeBuy}
+      />
     </div>
   );
 };
