@@ -1,6 +1,7 @@
 import backgroundImage from "@/assets/background.png";
 import { MarketHeader } from "@/components/MarketHeader";
 import { TeamCard } from "@/components/TeamCard";
+import { ClaimWinnings } from "@/components/ClaimWinnings";
 import { MarketInfo } from "@/components/MarketInfo";
 import { ConnectWallet } from "@/components/ConnectWallet";
 import { useWallet } from "@/hooks/useWallet";
@@ -20,12 +21,43 @@ const Index = () => {
     marketState,
     userBalances,
     buildBuySharesTxn,
+    buildClaimWinningsTxn,
     fetchMarketState,
     fetchUserBalances,
   } = useMarketContract(accountAddress ?? undefined);
 
   const seahawksProb = marketState.seahawksProb;
   const patriotsProb = marketState.patriotsProb;
+
+  // Determine if user can claim winnings
+  const winnerTeam = marketState.winner === 1 ? "seahawks" : marketState.winner === 2 ? "patriots" : null;
+  const winningShares = winnerTeam === "seahawks" ? userBalances.seaShares : winnerTeam === "patriots" ? userBalances.patShares : 0n;
+  const canClaim = marketState.isResolved && isConnected && winnerTeam !== null && winningShares > 0n;
+
+  const handleClaim = async () => {
+    if (!isConnected || !accountAddress) {
+      toast.error("Please connect your wallet first.");
+      return;
+    }
+
+    try {
+      const unsignedTxns = await buildClaimWinningsTxn(accountAddress);
+      const signedTxns = await signTransactions(unsignedTxns);
+      const txnIds = await postTransactions(signedTxns);
+
+      toast.success("Winnings claimed successfully!", {
+        description: `Transaction: ${txnIds[0]?.slice(0, 8)}...`,
+      });
+
+      await fetchMarketState();
+      if (accountAddress) await fetchUserBalances(accountAddress);
+    } catch (error: any) {
+      console.error("Claim failed:", error);
+      toast.error("Claim failed", {
+        description: error?.message || "Please try again.",
+      });
+    }
+  };
 
   const handleBuy = async (team: "seahawks" | "patriots", amountVoi: number) => {
     const wantSea = team === "seahawks";
@@ -109,6 +141,16 @@ const Index = () => {
             onBuy={(amount) => handleBuy("patriots", amount)}
           />
         </div>
+
+        {/* Claim Winnings Banner */}
+        {canClaim && winnerTeam && (
+          <ClaimWinnings
+            winnerTeam={winnerTeam}
+            winnerName={winnerTeam === "seahawks" ? "Seattle Seahawks" : "New England Patriots"}
+            winningShares={winningShares}
+            onClaim={handleClaim}
+          />
+        )}
 
         {/* Probability Bar Visual */}
         <div className="max-w-4xl mx-auto mt-8 animate-slide-up" style={{ animationDelay: "0.25s" }}>
