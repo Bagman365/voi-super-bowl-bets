@@ -10,9 +10,9 @@ interface TeamCardProps {
   name: string;
   probability: number;
   sharePriceMicroVoi: bigint;
-  volume: string;
-  trend: "up" | "down";
-  trendAmount: number;
+  totalSharesSold: bigint;
+  skewDirection: "up" | "down" | "neutral";
+  skewAmount: number;
   isWalletConnected: boolean;
   userShares: bigint;
   onBuy: (amountVoi: number) => Promise<void>;
@@ -23,9 +23,9 @@ export const TeamCard = ({
   name,
   probability,
   sharePriceMicroVoi,
-  volume,
-  trend,
-  trendAmount,
+  totalSharesSold,
+  skewDirection,
+  skewAmount,
   isWalletConnected,
   userShares,
   onBuy,
@@ -62,19 +62,21 @@ export const TeamCard = ({
           />
           <div>
             <h3 className="text-xl font-bold text-foreground">{name}</h3>
-            <div className="flex items-center gap-2 text-sm">
-              {trend === "up" ? (
-                <TrendingUp className="w-4 h-4 text-seahawks" />
-              ) : (
-                <TrendingDown className="w-4 h-4 text-accent" />
-              )}
-              <span
-                className={trend === "up" ? "text-seahawks" : "text-accent"}
-              >
-                {trend === "up" ? "+" : "-"}
-                {Math.round(trendAmount)}% today
-              </span>
-            </div>
+            {skewDirection !== "neutral" && (
+              <div className="flex items-center gap-2 text-sm">
+                {skewDirection === "up" ? (
+                  <TrendingUp className="w-4 h-4 text-seahawks" />
+                ) : (
+                  <TrendingDown className="w-4 h-4 text-accent" />
+                )}
+                <span
+                  className={skewDirection === "up" ? "text-seahawks" : "text-accent"}
+                >
+                  {skewDirection === "up" ? "+" : "-"}
+                  {Math.round(skewAmount)}% from even
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -112,8 +114,10 @@ export const TeamCard = ({
           </p>
         </div>
         <div className="bg-background/50 rounded-lg p-3">
-          <p className="text-muted-foreground text-xs mb-1">24h Volume</p>
-          <p className="text-foreground font-semibold text-lg">{volume}</p>
+          <p className="text-muted-foreground text-xs mb-1">Shares Sold</p>
+          <p className="text-foreground font-semibold text-lg">
+            {Number(totalSharesSold).toLocaleString()}
+          </p>
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import backgroundImage from "@/assets/background.png";
 import { MarketHeader } from "@/components/MarketHeader";
 import { TeamCard } from "@/components/TeamCard";
@@ -6,7 +7,7 @@ import { MarketInfo } from "@/components/MarketInfo";
 import { ConnectWallet } from "@/components/ConnectWallet";
 import { useWallet } from "@/hooks/useWallet";
 import { useMarketContract } from "@/hooks/useMarketContract";
-import { voiToMicroVoi } from "@/lib/voi";
+import { voiToMicroVoi, microVoiToVoi } from "@/lib/voi";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -28,6 +29,40 @@ const Index = () => {
 
   const seahawksProb = marketState.seahawksProb;
   const patriotsProb = marketState.patriotsProb;
+
+  // Compute on-chain derived stats
+  const { totalVolumeFormatted, totalSharesFormatted, seaSkew, patSkew } = useMemo(() => {
+    const seaSold = Number(marketState.totalSeaSold);
+    const patSold = Number(marketState.totalPatSold);
+    const totalShares = seaSold + patSold;
+
+    // Approximate total volume: shares * base price (rough estimate)
+    const baseVoi = microVoiToVoi(marketState.basePrice);
+    const totalVolumeVoi = totalShares * baseVoi;
+
+    const formatVolume = (voi: number): string => {
+      if (voi >= 1_000_000) return `${(voi / 1_000_000).toFixed(1)}M VOI`;
+      if (voi >= 1_000) return `${(voi / 1_000).toFixed(1)}K VOI`;
+      return `${voi.toFixed(0)} VOI`;
+    };
+
+    // Skew: how far each team's probability deviates from 50%
+    const seaDeviation = Math.abs(seahawksProb - 50);
+    const patDeviation = Math.abs(patriotsProb - 50);
+
+    return {
+      totalVolumeFormatted: formatVolume(totalVolumeVoi),
+      totalSharesFormatted: totalShares.toLocaleString(),
+      seaSkew: {
+        direction: (seahawksProb > 50 ? "up" : seahawksProb < 50 ? "down" : "neutral") as "up" | "down" | "neutral",
+        amount: seaDeviation,
+      },
+      patSkew: {
+        direction: (patriotsProb > 50 ? "up" : patriotsProb < 50 ? "down" : "neutral") as "up" | "down" | "neutral",
+        amount: patDeviation,
+      },
+    };
+  }, [marketState, seahawksProb, patriotsProb]);
 
   // Determine if user can claim winnings
   const winnerTeam = marketState.winner === 1 ? "seahawks" : marketState.winner === 2 ? "patriots" : null;
@@ -109,8 +144,8 @@ const Index = () => {
 
       <div className="relative z-10 container mx-auto px-4 pt-20 pb-12 md:py-20">
         <MarketHeader
-          totalVolume="$2.4M"
-          traders={12847}
+          totalVolume={totalVolumeFormatted}
+          totalShares={totalSharesFormatted}
           endDate="Feb 9, 2026"
         />
 
@@ -121,9 +156,9 @@ const Index = () => {
             name="Seattle Seahawks"
             probability={seahawksProb}
             sharePriceMicroVoi={marketState.seaPrice}
-            volume="$1.2M"
-            trend="up"
-            trendAmount={3.2}
+            totalSharesSold={marketState.totalSeaSold}
+            skewDirection={seaSkew.direction}
+            skewAmount={seaSkew.amount}
             isWalletConnected={isConnected}
             userShares={userBalances.seaShares}
             onBuy={(amount) => handleBuy("seahawks", amount)}
@@ -133,9 +168,9 @@ const Index = () => {
             name="New England Patriots"
             probability={patriotsProb}
             sharePriceMicroVoi={marketState.patPrice}
-            volume="$1.2M"
-            trend="down"
-            trendAmount={3.2}
+            totalSharesSold={marketState.totalPatSold}
+            skewDirection={patSkew.direction}
+            skewAmount={patSkew.amount}
             isWalletConnected={isConnected}
             userShares={userBalances.patShares}
             onBuy={(amount) => handleBuy("patriots", amount)}
