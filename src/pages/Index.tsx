@@ -3,6 +3,7 @@ import backgroundImage from "@/assets/background.png";
 import { MarketHeader } from "@/components/MarketHeader";
 import { TeamCard } from "@/components/TeamCard";
 import { ClaimWinnings } from "@/components/ClaimWinnings";
+import { CountdownTimer } from "@/components/CountdownTimer";
 import { MarketInfo } from "@/components/MarketInfo";
 import { ConnectWallet } from "@/components/ConnectWallet";
 import { useWallet } from "@/hooks/useWallet";
@@ -11,6 +12,9 @@ import { voiToMicroVoi, microVoiToVoi } from "@/lib/voi";
 import { toast } from "sonner";
 
 const Index = () => {
+  // Super Bowl 60: Feb 9, 2026, 6:30 PM ET (23:30 UTC)
+  const superBowlDate = useMemo(() => new Date("2026-02-09T23:30:00Z"), []);
+
   const {
     accountAddress,
     isConnected,
@@ -148,6 +152,9 @@ const Index = () => {
           totalShares={totalSharesFormatted}
           endDate="Feb 9, 2026"
         />
+
+        {/* Countdown Timer */}
+        {!marketState.isResolved && <CountdownTimer targetDate={superBowlDate} />}
 
         {/* Team Cards */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
