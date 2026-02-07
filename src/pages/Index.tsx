@@ -9,6 +9,7 @@ import { ConnectWallet } from "@/components/ConnectWallet";
 import { useWallet } from "@/hooks/useWallet";
 import { useMarketContract } from "@/hooks/useMarketContract";
 import { voiToMicroVoi, microVoiToVoi } from "@/lib/voi";
+import { classifyTransactionError } from "@/lib/transactionErrors";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -92,9 +93,8 @@ const Index = () => {
       if (accountAddress) await fetchUserBalances(accountAddress);
     } catch (error: any) {
       console.error("Claim failed:", error);
-      toast.error("Claim failed", {
-        description: error?.message || "Please try again.",
-      });
+      const { title, description } = classifyTransactionError(error);
+      toast.error(title, { description });
     }
   };
 
@@ -117,14 +117,12 @@ const Index = () => {
         description: `Transaction: ${txnIds[0]?.slice(0, 8)}...`,
       });
 
-      // Refresh market state and user balances
       await fetchMarketState();
       if (accountAddress) await fetchUserBalances(accountAddress);
     } catch (error: any) {
       console.error("Buy failed:", error);
-      toast.error("Transaction failed", {
-        description: error?.message || "Please try again.",
-      });
+      const { title, description } = classifyTransactionError(error);
+      toast.error(title, { description });
     }
   };
 
