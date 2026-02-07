@@ -15,10 +15,13 @@
          <span className="text-seahawks text-sm font-medium">Live Market</span>
        </div>
  
-       {/* Title */}
-       <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-         🏈 Super Bowl 60 Winner
-       </h1>
+        {/* Brand + Title */}
+        <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground font-medium mb-2">
+          Flowbet
+        </p>
+        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          🏈 Super Bowl 60 Winner
+        </h1>
        <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
          Which team will win Super Bowl 60: the Seattle Seahawks or the New England Patriots?
        </p>
