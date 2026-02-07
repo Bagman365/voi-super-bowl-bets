@@ -1,11 +1,21 @@
 
 
-## Update Favicon
+## Update HTML Metadata for Super Bowl Bet on Voi Branding
 
-Replace the current favicon with the uploaded Super Bowl trophy image.
+Update `index.html` to replace all default Lovable metadata with project-specific branding.
 
-### Steps
+### Changes to `index.html`
 
-1. Copy the uploaded image (`user-uploads://image-2.png`) to the `public` directory as `favicon.png`.
-2. Update `index.html` to reference the new favicon with a `<link rel="icon">` tag pointing to `/favicon.png`.
+- **Title**: "Lovable App" -> "Super Bowl Bet on Voi"
+- **Description**: "Lovable Generated Project" -> "On-chain prediction market for Super Bowl betting on Voi Network"
+- **Author**: "Lovable" -> "Super Bowl Bet on Voi"
+- **OG Title**: "Lovable App" -> "Super Bowl Bet on Voi"
+- **OG Description**: "Lovable Generated Project" -> "On-chain prediction market for Super Bowl betting on Voi Network"
+- **Twitter Site**: "@Lovable" -> Remove or update to project Twitter handle
+- **OG Image / Twitter Image**: Keep current Lovable placeholder (can be replaced later with a custom branded image)
+- Remove the TODO comment about updating og:title
+
+### Technical Details
+
+All changes are in a single file: `index.html`. The meta tags on lines 7-18 will be updated with the new branding values.
 
