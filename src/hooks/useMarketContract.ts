@@ -39,9 +39,9 @@ const getABIContract = () => {
   const methods = contractSpec.methods.map((m) => ({
     name: m.name,
     desc: m.desc,
-    args: m.args
-      .filter((a) => a.type !== "pay") // Filter out transaction args for ABI
-      .map((a) => ({ type: a.type, name: a.name })),
+    // Include ALL arg types (including transaction types like "pay")
+    // so method selectors are computed correctly
+    args: m.args.map((a) => ({ type: a.type, name: a.name })),
     returns: { type: m.returns.type },
   }));
 
