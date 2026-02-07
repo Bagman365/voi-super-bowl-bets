@@ -7,6 +7,7 @@ import { CountdownTimer } from "@/components/CountdownTimer";
 import { MarketInfo } from "@/components/MarketInfo";
 import { ConnectWallet } from "@/components/ConnectWallet";
 import { ConfirmTransactionModal, ConfirmBuyDetails } from "@/components/ConfirmTransactionModal";
+import { TransactionStatusOverlay, TransactionPhase } from "@/components/TransactionStatusOverlay";
 import { useWallet } from "@/hooks/useWallet";
 import { useMarketContract } from "@/hooks/useMarketContract";
 import { voiToMicroVoi, microVoiToVoi } from "@/lib/voi";
@@ -39,6 +40,7 @@ const Index = () => {
   // Confirmation modal state
   const [confirmDetails, setConfirmDetails] = useState<ConfirmBuyDetails | null>(null);
   const [pendingBuy, setPendingBuy] = useState<{ team: "seahawks" | "patriots"; amountVoi: number } | null>(null);
+  const [txPhase, setTxPhase] = useState<TransactionPhase>(null);
 
   // Compute on-chain derived stats
   const { totalVolumeFormatted, totalSharesFormatted, seaSkew, patSkew } = useMemo(() => {
@@ -83,18 +85,24 @@ const Index = () => {
       return;
     }
 
+    setTxPhase("building");
     try {
       const unsignedTxns = await buildClaimWinningsTxn(accountAddress);
+      setTxPhase("signing");
       const signedTxns = await signTransactions(unsignedTxns);
+      setTxPhase("submitting");
       const txnIds = await postTransactions(signedTxns);
-
-      toast.success("Winnings claimed successfully!", {
-        description: `Transaction: ${txnIds[0]?.slice(0, 8)}...`,
-      });
+      setTxPhase("confirming");
 
       await fetchMarketState();
       if (accountAddress) await fetchUserBalances(accountAddress);
+
+      setTxPhase(null);
+      toast.success("Winnings claimed successfully!", {
+        description: `Transaction: ${txnIds[0]?.slice(0, 8)}...`,
+      });
     } catch (error: any) {
+      setTxPhase(null);
       console.error("Claim failed:", error);
       const { title, description } = classifyTransactionError(error);
       toast.error(title, { description });
@@ -134,19 +142,25 @@ const Index = () => {
     const wantSea = team === "seahawks";
     const teamName = wantSea ? "Seattle Seahawks" : "New England Patriots";
 
+    setTxPhase("building");
     try {
       const microVoi = voiToMicroVoi(amountVoi);
       const unsignedTxns = await buildBuySharesTxn(accountAddress, wantSea, microVoi);
+      setTxPhase("signing");
       const signedTxns = await signTransactions(unsignedTxns);
+      setTxPhase("submitting");
       const txnIds = await postTransactions(signedTxns);
-
-      toast.success(`Purchased ${amountVoi} VOI of ${teamName} shares!`, {
-        description: `Transaction: ${txnIds[0]?.slice(0, 8)}...`,
-      });
+      setTxPhase("confirming");
 
       await fetchMarketState();
       if (accountAddress) await fetchUserBalances(accountAddress);
+
+      setTxPhase(null);
+      toast.success(`Purchased ${amountVoi} VOI of ${teamName} shares!`, {
+        description: `Transaction: ${txnIds[0]?.slice(0, 8)}...`,
+      });
     } catch (error: any) {
+      setTxPhase(null);
       console.error("Buy failed:", error);
       const { title, description } = classifyTransactionError(error);
       toast.error(title, { description });
@@ -265,6 +279,9 @@ const Index = () => {
           Powered by <span className="text-foreground font-medium">Dork Labs</span>
         </footer>
       </div>
+
+      {/* Transaction Status Overlay */}
+      <TransactionStatusOverlay phase={txPhase} />
 
       {/* Confirmation Modal */}
       <ConfirmTransactionModal
