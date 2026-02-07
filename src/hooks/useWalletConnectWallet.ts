@@ -112,7 +112,7 @@ export const useWalletConnectWallet = () => {
     setIsConnecting(true);
     try {
       const { uri, approval } = await signClient.connect({
-        requiredNamespaces: {
+        optionalNamespaces: {
           algorand: {
             methods: ["algo_signTxn"],
             chains: [VOI_CHAIN],
