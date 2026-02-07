@@ -196,12 +196,20 @@ export const useWalletConnectWallet = () => {
     async (stxns: Uint8Array[]): Promise<string[]> => {
       const { getAlgodClient } = await import("@/lib/voi");
       const algod = getAlgodClient();
-      const txIds: string[] = [];
+
+      // Concatenate all signed transactions into a single Uint8Array
+      // so grouped transactions are submitted atomically
+      const totalLength = stxns.reduce((acc, stxn) => acc + stxn.length, 0);
+      const combined = new Uint8Array(totalLength);
+      let offset = 0;
       for (const stxn of stxns) {
-        const response = await algod.sendRawTransaction(stxn).do();
-        txIds.push(response.txid);
+        combined.set(stxn, offset);
+        offset += stxn.length;
       }
-      return txIds;
+
+      const response = await algod.sendRawTransaction(combined).do();
+      const txId = (response as any).txid ?? (response as any).txId ?? "";
+      return [txId];
     },
     []
   );
