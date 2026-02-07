@@ -3,10 +3,10 @@ import SignClient from "@walletconnect/sign-client";
 import { WalletConnectModal } from "@walletconnect/modal";
 
 const WALLET_STORAGE_KEY = "wc_wallet_address";
-const WC_PROJECT_ID = "f926785421eb44088bbb2c89e24fcecd"; // Public project ID for WalletConnect
+const WC_PROJECT_ID = "f926785421eb44088bbb2c89e24fcecd"; // Replace with valid Project ID from cloud.walletconnect.com
 
-// Voi Network uses Algorand's chain namespace
-const VOI_CHAIN = "algorand:mainnet-v1.0";
+// Voi Network chain ID derived from genesis hash
+const VOI_CHAIN = "algorand:r20fSQI8gWe_kFZziNonSPCXLwcQmH_n";
 
 // Browser-safe base64 helpers
 const uint8ArrayToBase64 = (arr: Uint8Array): string => {
@@ -192,14 +192,28 @@ export const useWalletConnectWallet = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const postTransactions = useCallback(
+    async (stxns: Uint8Array[]): Promise<string[]> => {
+      const { getAlgodClient } = await import("@/lib/voi");
+      const algod = getAlgodClient();
+      const txIds: string[] = [];
+      for (const stxn of stxns) {
+        const response = await algod.sendRawTransaction(stxn).do();
+        txIds.push(response.txid);
+      }
+      return txIds;
+    },
+    []
+  );
+
   return {
     accountAddress,
     isConnecting,
     isConnected: !!accountAddress,
-    isAvailable: true, // WalletConnect is always available (via QR)
     connect,
     disconnect,
     signTransactions,
+    postTransactions,
     shortenAddress,
   };
 };
