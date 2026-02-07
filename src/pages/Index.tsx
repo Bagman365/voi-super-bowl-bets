@@ -18,9 +18,11 @@ const Index = () => {
 
   const {
     marketState,
+    userBalances,
     buildBuySharesTxn,
     fetchMarketState,
-  } = useMarketContract();
+    fetchUserBalances,
+  } = useMarketContract(accountAddress ?? undefined);
 
   const seahawksProb = marketState.seahawksProb;
   const patriotsProb = marketState.patriotsProb;
@@ -44,8 +46,9 @@ const Index = () => {
         description: `Transaction: ${txnIds[0]?.slice(0, 8)}...`,
       });
 
-      // Refresh market state
+      // Refresh market state and user balances
       await fetchMarketState();
+      if (accountAddress) await fetchUserBalances(accountAddress);
     } catch (error: any) {
       console.error("Buy failed:", error);
       toast.error("Transaction failed", {
@@ -90,6 +93,7 @@ const Index = () => {
             trend="up"
             trendAmount={3.2}
             isWalletConnected={isConnected}
+            userShares={userBalances.seaShares}
             onBuy={(amount) => handleBuy("seahawks", amount)}
           />
           <TeamCard
@@ -101,6 +105,7 @@ const Index = () => {
             trend="down"
             trendAmount={3.2}
             isWalletConnected={isConnected}
+            userShares={userBalances.patShares}
             onBuy={(amount) => handleBuy("patriots", amount)}
           />
         </div>
