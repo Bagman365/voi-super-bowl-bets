@@ -276,7 +276,7 @@ const Index = () => {
 
         {/* Footer */}
         <footer className="mt-16 text-center text-muted-foreground text-sm">
-          Powered by <span className="text-foreground font-medium">Dork Labs</span>
+          <span className="text-foreground font-medium">Flowbet</span> Powered by <span className="text-foreground font-medium">Dork Labs</span>
         </footer>
       </div>
 
