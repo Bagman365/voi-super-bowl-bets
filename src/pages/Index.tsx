@@ -161,6 +161,8 @@ const Index = () => {
             skewAmount={seaSkew.amount}
             isWalletConnected={isConnected}
             userShares={userBalances.seaShares}
+            isResolved={marketState.isResolved}
+            isWinner={winnerTeam === "seahawks"}
             onBuy={(amount) => handleBuy("seahawks", amount)}
           />
           <TeamCard
@@ -173,6 +175,8 @@ const Index = () => {
             skewAmount={patSkew.amount}
             isWalletConnected={isConnected}
             userShares={userBalances.patShares}
+            isResolved={marketState.isResolved}
+            isWinner={winnerTeam === "patriots"}
             onBuy={(amount) => handleBuy("patriots", amount)}
           />
         </div>
