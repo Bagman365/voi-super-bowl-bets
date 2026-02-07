@@ -1,12 +1,12 @@
- import { Clock, Users, DollarSign } from "lucide-react";
+ import { Clock, BarChart3, DollarSign } from "lucide-react";
  
  interface MarketHeaderProps {
    totalVolume: string;
-   traders: number;
+   totalShares: string;
    endDate: string;
  }
  
- export const MarketHeader = ({ totalVolume, traders, endDate }: MarketHeaderProps) => {
+ export const MarketHeader = ({ totalVolume, totalShares, endDate }: MarketHeaderProps) => {
    return (
      <div className="text-center mb-12 animate-slide-up">
        {/* Live Badge */}
@@ -32,9 +32,9 @@
            </span>
          </div>
          <div className="flex items-center gap-2 text-muted-foreground">
-           <Users className="w-4 h-4" />
+           <BarChart3 className="w-4 h-4" />
            <span>
-             Traders: <span className="text-foreground font-semibold">{traders.toLocaleString()}</span>
+             Shares Sold: <span className="text-foreground font-semibold">{totalShares}</span>
            </span>
          </div>
          <div className="flex items-center gap-2 text-muted-foreground">
