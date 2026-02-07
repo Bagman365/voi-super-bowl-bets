@@ -197,6 +197,8 @@ export const useWalletConnectWallet = () => {
       const { getAlgodClient } = await import("@/lib/voi");
       const algod = getAlgodClient();
 
+      console.log("[postTransactions] Submitting", stxns.length, "signed txn(s), byte lengths:", stxns.map(s => s.length));
+
       // Concatenate all signed transactions into a single Uint8Array
       // so grouped transactions are submitted atomically
       const totalLength = stxns.reduce((acc, stxn) => acc + stxn.length, 0);
@@ -207,8 +209,14 @@ export const useWalletConnectWallet = () => {
         offset += stxn.length;
       }
 
+      console.log("[postTransactions] Combined payload size:", combined.length, "bytes");
+
       const response = await algod.sendRawTransaction(combined).do();
+      console.log("[postTransactions] sendRawTransaction response:", JSON.stringify(response));
+
       const txId = (response as any).txid ?? (response as any).txId ?? "";
+      console.log("[postTransactions] Extracted txId:", txId);
+
       return [txId];
     },
     []
