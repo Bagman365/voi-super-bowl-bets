@@ -1,6 +1,8 @@
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet, LogOut } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
+import { toast } from "@/hooks/use-toast";
 
 export const ConnectWallet = () => {
   const {
@@ -11,6 +13,36 @@ export const ConnectWallet = () => {
     disconnect,
     shortenAddress,
   } = useWallet();
+
+  const wasConnected = useRef(isConnected);
+
+  useEffect(() => {
+    if (isConnected && !wasConnected.current && accountAddress) {
+      toast({
+        title: "Wallet Connected",
+        description: `Connected as ${shortenAddress(accountAddress)}`,
+      });
+    }
+    if (!isConnected && wasConnected.current) {
+      toast({
+        title: "Wallet Disconnected",
+        description: "Your wallet has been disconnected.",
+      });
+    }
+    wasConnected.current = isConnected;
+  }, [isConnected, accountAddress]);
+
+  const handleConnect = async () => {
+    try {
+      await connect();
+    } catch {
+      toast({
+        title: "Connection Failed",
+        description: "Could not connect to Voi Wallet. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isConnected && accountAddress) {
     return (
@@ -35,7 +67,7 @@ export const ConnectWallet = () => {
 
   return (
     <Button
-      onClick={connect}
+      onClick={handleConnect}
       disabled={isConnecting}
       className="bg-seahawks hover:bg-seahawks/90 text-primary-foreground font-semibold"
     >
