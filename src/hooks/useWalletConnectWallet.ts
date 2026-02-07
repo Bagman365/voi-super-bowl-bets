@@ -211,13 +211,26 @@ export const useWalletConnectWallet = () => {
 
       console.log("[postTransactions] Combined payload size:", combined.length, "bytes");
 
-      const response = await algod.sendRawTransaction(combined).do();
-      console.log("[postTransactions] sendRawTransaction response:", JSON.stringify(response));
+      try {
+        const response = await algod.sendRawTransaction(combined).do();
+        console.log("[postTransactions] sendRawTransaction response:", JSON.stringify(response));
 
-      const txId = (response as any).txid ?? (response as any).txId ?? "";
-      console.log("[postTransactions] Extracted txId:", txId);
+        const txId = (response as any).txid ?? (response as any).txId ?? "";
+        console.log("[postTransactions] Extracted txId:", txId);
 
-      return [txId];
+        return [txId];
+      } catch (err: any) {
+        // Extract the actual chain error for debugging
+        const body = err?.response?.body ?? err?.body;
+        const statusCode = err?.response?.statusCode ?? err?.status;
+        console.error("[postTransactions] RAW CHAIN ERROR:", {
+          message: err?.message,
+          statusCode,
+          body: body ? JSON.stringify(body) : undefined,
+          fullError: String(err),
+        });
+        throw err;
+      }
     },
     []
   );

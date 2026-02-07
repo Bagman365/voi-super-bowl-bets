@@ -210,26 +210,34 @@ export const useMarketContract = (userAddress?: string) => {
 
       // 2. App call with buy_shares method (0.002 VOI fee for box storage)
       const method = contract.getMethodByName("buy_shares");
+      const selectorHex = Array.from(method.getSelector()).map(b => b.toString(16).padStart(2, '0')).join('');
+      const encodedBool = algosdk.ABIType.from("bool").encode(wantSea);
+      console.log("[buildBuySharesTxn] Method:", method.getSignature(), "Selector:", selectorHex, "Bool encoded:", Array.from(encodedBool));
+
+      const boxName = new Uint8Array([
+        ...new TextEncoder().encode(wantSea ? "balances_sea" : "balances_pat"),
+        ...algosdk.decodeAddress(senderAddress).publicKey,
+      ]);
+
       const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
         sender: senderAddress,
         appIndex: APP_ID,
         onComplete: algosdk.OnApplicationComplete.NoOpOC,
         appArgs: [
           method.getSelector(),
-          algosdk.ABIType.from("bool").encode(wantSea),
+          encodedBool,
         ],
         suggestedParams: appCallParams,
-        // Box references for user balance storage
+        // Box references for user balance storage (appIndex 0 = current app)
         boxes: [
           {
-            appIndex: APP_ID,
-            name: new Uint8Array([
-              ...new TextEncoder().encode(wantSea ? "balances_sea" : "balances_pat"),
-              ...algosdk.decodeAddress(senderAddress).publicKey,
-            ]),
+            appIndex: 0,
+            name: boxName,
           },
         ],
       });
+
+      console.log("[buildBuySharesTxn] Pay amount:", paymentAmountMicroVoi.toString(), "App fee:", 2000, "Box name length:", boxName.length);
 
       // Assign group ID
       const txns = [payTxn, appCallTxn];
@@ -263,14 +271,14 @@ export const useMarketContract = (userAddress?: string) => {
         suggestedParams: appCallParams,
         boxes: [
           {
-            appIndex: APP_ID,
+            appIndex: 0,
             name: new Uint8Array([
               ...new TextEncoder().encode("balances_sea"),
               ...algosdk.decodeAddress(senderAddress).publicKey,
             ]),
           },
           {
-            appIndex: APP_ID,
+            appIndex: 0,
             name: new Uint8Array([
               ...new TextEncoder().encode("balances_pat"),
               ...algosdk.decodeAddress(senderAddress).publicKey,
