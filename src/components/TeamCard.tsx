@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, DollarSign, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Wallet } from "lucide-react";
 import seahawksHelmet from "@/assets/seahawks-helmet.png";
 import patriotsHelmet from "@/assets/patriots-helmet.png";
 import { microVoiToVoi } from "@/lib/voi";
@@ -14,6 +14,7 @@ interface TeamCardProps {
   trend: "up" | "down";
   trendAmount: number;
   isWalletConnected: boolean;
+  userShares: bigint;
   onBuy: (amountVoi: number) => Promise<void>;
 }
 
@@ -26,6 +27,7 @@ export const TeamCard = ({
   trend,
   trendAmount,
   isWalletConnected,
+  userShares,
   onBuy,
 }: TeamCardProps) => {
   const [buyAmount, setBuyAmount] = useState(10);
@@ -114,6 +116,19 @@ export const TeamCard = ({
           <p className="text-foreground font-semibold text-lg">{volume}</p>
         </div>
       </div>
+
+      {/* User Balance */}
+      {isWalletConnected && userShares > 0n && (
+        <div className={`flex items-center gap-2 mb-4 rounded-lg px-4 py-2.5 ${
+          isSeahawks ? "bg-seahawks/10 border border-seahawks/20" : "bg-accent/10 border border-accent/20"
+        }`}>
+          <Wallet className={`w-4 h-4 ${isSeahawks ? "text-seahawks" : "text-accent"}`} />
+          <span className="text-muted-foreground text-sm">Your Shares:</span>
+          <span className={`font-bold text-sm ${isSeahawks ? "text-seahawks" : "text-accent"}`}>
+            {Number(userShares).toLocaleString()}
+          </span>
+        </div>
+      )}
 
       {/* Buy Section */}
       <div className="space-y-3">

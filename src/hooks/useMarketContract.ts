@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import algosdk from "algosdk";
 import { getAlgodClient, APP_ID, isContractDeployed, MICRO_VOI } from "@/lib/voi";
 import contractSpec from "@/contracts/VoiSuperBowlWhaleMarket.arc56.json";
+
+export interface UserBalances {
+  seaShares: bigint;
+  patShares: bigint;
+}
 
 export interface MarketState {
   totalSeaSold: bigint;
@@ -46,10 +51,12 @@ const getABIContract = () => {
   });
 };
 
-export const useMarketContract = () => {
+export const useMarketContract = (userAddress?: string) => {
   const [marketState, setMarketState] = useState<MarketState>(DEFAULT_MARKET_STATE);
+  const [userBalances, setUserBalances] = useState<UserBalances>({ seaShares: 0n, patShares: 0n });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const prevAddressRef = useRef<string | undefined>(undefined);
 
   // Calculate probability from share totals
   const calculateProbability = (seaSold: bigint, patSold: bigint) => {
@@ -135,6 +142,42 @@ export const useMarketContract = () => {
       setError("Failed to load market data from chain");
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  // Read a single box balance (returns 0 if box doesn't exist)
+  const readBoxBalance = async (algod: algosdk.Algodv2, prefix: string, address: string): Promise<bigint> => {
+    try {
+      const publicKey = algosdk.decodeAddress(address).publicKey;
+      const boxName = new Uint8Array([
+        ...new TextEncoder().encode(prefix),
+        ...publicKey,
+      ]);
+      const box = await algod.getApplicationBoxByName(APP_ID, boxName).do();
+      const value = (box as any).value ?? (box as any).value;
+      if (value instanceof Uint8Array && value.length === 8) {
+        // Big-endian uint64
+        return new DataView(value.buffer, value.byteOffset, value.byteLength).getBigUint64(0);
+      }
+      return 0n;
+    } catch {
+      // Box doesn't exist = user has no shares
+      return 0n;
+    }
+  };
+
+  // Fetch user balances from box storage
+  const fetchUserBalances = useCallback(async (address: string) => {
+    if (!isContractDeployed() || !address) return;
+    try {
+      const algod = getAlgodClient();
+      const [seaShares, patShares] = await Promise.all([
+        readBoxBalance(algod, "balances_sea", address),
+        readBoxBalance(algod, "balances_pat", address),
+      ]);
+      setUserBalances({ seaShares, patShares });
+    } catch (err) {
+      console.error("Failed to fetch user balances:", err);
     }
   }, []);
 
@@ -235,22 +278,38 @@ export const useMarketContract = () => {
     []
   );
 
-  // Poll market state
+  // Poll market state + user balances
   useEffect(() => {
     fetchMarketState();
 
     if (isContractDeployed()) {
-      const interval = setInterval(fetchMarketState, 15_000); // every 15s
+      const interval = setInterval(() => {
+        fetchMarketState();
+        if (userAddress) fetchUserBalances(userAddress);
+      }, 15_000);
       return () => clearInterval(interval);
     }
-  }, [fetchMarketState]);
+  }, [fetchMarketState, fetchUserBalances, userAddress]);
+
+  // Fetch user balances when address changes
+  useEffect(() => {
+    if (userAddress && userAddress !== prevAddressRef.current) {
+      fetchUserBalances(userAddress);
+    }
+    if (!userAddress) {
+      setUserBalances({ seaShares: 0n, patShares: 0n });
+    }
+    prevAddressRef.current = userAddress;
+  }, [userAddress, fetchUserBalances]);
 
   return {
     marketState,
+    userBalances,
     isLoading,
     error,
     isDeployed: isContractDeployed(),
     fetchMarketState,
+    fetchUserBalances,
     buildBuySharesTxn,
     buildClaimWinningsTxn,
   };
