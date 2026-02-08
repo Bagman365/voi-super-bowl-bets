@@ -5,7 +5,7 @@ import { getAlgodClient, APP_ID, isContractDeployed, MICRO_VOI } from "@/lib/voi
 // Fee & MBR constants (microVoi)
 const BOX_MBR = 23_300;   // 2,500 + 400 * (44 + 8) — box creation deposit
 const BUY_FEE = 2_000;    // app call fee, covers 2 txns in group
-const CLAIM_FEE = 3_000;  // app call + inner payment + box deletion margin
+const CLAIM_FEE = 4_000;  // app call + inner payment(s) + box deletion margin
 import contractSpec from "@/contracts/VoiSuperBowlWhaleMarket.arc56.json";
 
 export interface UserBalances {
@@ -289,8 +289,22 @@ export const useMarketContract = (userAddress?: string) => {
       const contract = getABIContract();
       const method = contract.getMethodByName("claim_winnings");
 
-      // Increased fee to cover app call + inner payment + potential box deletion
+      const selectorHex = Array.from(method.getSelector()).map(b => b.toString(16).padStart(2, '0')).join('');
+      console.log("[buildClaimWinningsTxn] Method:", method.getSignature(), "Selector:", selectorHex);
+
+      // Increased fee to cover app call + inner payment(s) + potential box deletion
       const appCallParams = { ...suggestedParams, flatFee: true, fee: CLAIM_FEE };
+
+      const seaBoxName = new Uint8Array([
+        ...new TextEncoder().encode("balances_sea"),
+        ...algosdk.decodeAddress(senderAddress).publicKey,
+      ]);
+      const patBoxName = new Uint8Array([
+        ...new TextEncoder().encode("balances_pat"),
+        ...algosdk.decodeAddress(senderAddress).publicKey,
+      ]);
+
+      console.log("[buildClaimWinningsTxn] Sender:", senderAddress, "Fee:", CLAIM_FEE, "seaBox length:", seaBoxName.length, "patBox length:", patBoxName.length);
 
       const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
         sender: senderAddress,
@@ -299,22 +313,12 @@ export const useMarketContract = (userAddress?: string) => {
         appArgs: [method.getSelector()],
         suggestedParams: appCallParams,
         boxes: [
-          {
-            appIndex: 0,
-            name: new Uint8Array([
-              ...new TextEncoder().encode("balances_sea"),
-              ...algosdk.decodeAddress(senderAddress).publicKey,
-            ]),
-          },
-          {
-            appIndex: 0,
-            name: new Uint8Array([
-              ...new TextEncoder().encode("balances_pat"),
-              ...algosdk.decodeAddress(senderAddress).publicKey,
-            ]),
-          },
+          { appIndex: 0, name: seaBoxName },
+          { appIndex: 0, name: patBoxName },
         ],
       });
+
+      console.log("[buildClaimWinningsTxn] Transaction built. AppID:", APP_ID, "TxnType:", appCallTxn.type);
 
       return [algosdk.encodeUnsignedTransaction(appCallTxn)];
     },
