@@ -109,6 +109,9 @@ const Index = () => {
     }
   };
 
+  // Track whether the pending purchase is a first-time buy for that team
+  const [isFirstPurchase, setIsFirstPurchase] = useState(false);
+
   // Opens the confirmation modal instead of immediately buying
   const handleBuyRequest = useCallback(
     (team: "seahawks" | "patriots", amountVoi: number) => {
@@ -122,6 +125,12 @@ const Index = () => {
       const sharePriceMicroVoi = wantSea ? marketState.seaPrice : marketState.patPrice;
       const probability = wantSea ? seahawksProb : patriotsProb;
 
+      // Determine if this is the user's first purchase for the selected team
+      const firstPurchase = wantSea
+        ? userBalances.seaShares === 0n
+        : userBalances.patShares === 0n;
+      setIsFirstPurchase(firstPurchase);
+
       setConfirmDetails({
         team,
         teamName,
@@ -131,7 +140,7 @@ const Index = () => {
       });
       setPendingBuy({ team, amountVoi });
     },
-    [isConnected, accountAddress, marketState, seahawksProb, patriotsProb]
+    [isConnected, accountAddress, marketState, seahawksProb, patriotsProb, userBalances]
   );
 
   // Executes the actual buy after user confirms in the modal
@@ -292,6 +301,7 @@ const Index = () => {
       <ConfirmTransactionModal
         details={confirmDetails}
         open={!!confirmDetails}
+        isFirstPurchase={isFirstPurchase}
         onClose={closeConfirmModal}
         onConfirm={executeBuy}
       />
