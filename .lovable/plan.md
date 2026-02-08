@@ -1,25 +1,57 @@
 
 
-## Increase Transaction Fees for Box Storage
+## Fix: Shared Wallet State via React Context
 
-The `buy_shares` and `claim_winnings` transactions fail on-chain because the app call fee doesn't cover the box storage MBR (Minimum Balance Requirement). The fix is to set the app call transaction fee to 0.002 VOI (2000 microVOI) instead of the default 0.001 VOI.
+### Problem
+`useWalletConnectWallet()` uses local `useState` for `accountAddress`, `signClient`, etc. Every component that calls `useWallet()` gets its own independent copy of this state. When `ConnectWallet` connects and updates its local state, the `Index` page's separate state stays stale -- so the buy buttons still show "Connect Wallet to Buy."
 
-### What changes
+### Solution
+Wrap the wallet logic in a React Context provider so all components share one single source of truth for wallet state.
 
-**File: `src/hooks/useMarketContract.ts`**
+### Changes
 
-1. **`buildBuySharesTxn`** -- After getting `suggestedParams`, create a copy for the app call with `flatFee: true` and `fee: 2000` (0.002 VOI). The payment transaction keeps the default fee.
+**1. Create `src/contexts/WalletContext.tsx` (new file)**
+- Move all the logic currently in `useWalletConnectWallet.ts` into a `WalletProvider` component
+- Store `accountAddress`, `isConnecting`, `signClient`, `sessionTopic` in the provider's state
+- Expose values and actions (`connect`, `disconnect`, `signTransactions`, `postTransactions`, `shortenAddress`) via React Context
+- Export a `useWalletContext` hook that reads from the context
 
-2. **`buildClaimWinningsTxn`** -- Same adjustment: set the app call fee to 2000 microVOI with `flatFee: true` to cover box reads during the claim.
+**2. Update `src/hooks/useWallet.ts`**
+- Replace the current implementation (which calls `useWalletConnectWallet()`) with a thin wrapper that calls `useWalletContext()` from the new context
+- The return shape stays identical, so no downstream changes are needed
 
-### Technical details
+**3. Update `src/main.tsx` (or `src/App.tsx`)**
+- Wrap the app tree with `<WalletProvider>` so all components share the same wallet state
+
+**4. `src/hooks/useWalletConnectWallet.ts` -- no changes needed**
+- This file can remain as-is or be deprecated; the logic will live in the context provider instead
+
+### Why This Works
+With a single `WalletProvider` at the app root, every call to `useWallet()` reads from the same shared state. When the wallet connects inside `ConnectWallet`, the context updates, which triggers a re-render in `Index` (and any other consumer), immediately reflecting `isConnected = true` and updating the buy buttons.
+
+### Technical Details
+
+The context provider structure:
 
 ```text
-Current:  suggestedParams.fee = ~1000 (0.001 VOI default)
-Proposed: appCallParams.fee = 2000 (0.002 VOI), appCallParams.flatFee = true
++---------------------------+
+|       WalletProvider      |
+|  (single source of truth) |
+|                           |
+|  accountAddress           |
+|  isConnecting             |
+|  signClient               |
+|  sessionTopic             |
+|  connect / disconnect     |
+|  signTransactions         |
+|  postTransactions         |
++---------------------------+
+       |              |
+  ConnectWallet     Index
+  (useWallet)     (useWallet)
+       |              |
+  Same state <-----> Same state
 ```
 
-The `flatFee` flag tells algosdk to use the exact fee value rather than computing it from the transaction size. This ensures the 0.002 VOI fee is sent regardless of transaction byte length.
-
-Both transactions in the buy group (pay + app call) still use the same base `suggestedParams` for consensus fields (genesis, first/last round, etc.) -- only the fee on the app call is overridden.
+No changes needed to `ConnectWallet.tsx`, `Index.tsx`, `TeamCard.tsx`, or `useMarketContract.ts` -- they all consume `useWallet()` which will transparently switch to using the shared context.
 
