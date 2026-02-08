@@ -234,6 +234,16 @@ const Index = () => {
         {/* Countdown Timer */}
         {!marketState.isResolved && <CountdownTimer targetDate={superBowlDate} />}
 
+        {/* Claim Winnings Banner — above team cards for visibility */}
+        {canClaim && winnerTeam && (
+          <ClaimWinnings
+            winnerTeam={winnerTeam}
+            winnerName={winnerTeam === "seahawks" ? "Seattle Seahawks" : "New England Patriots"}
+            winningShares={winningShares}
+            onClaim={handleClaim}
+          />
+        )}
+
         {/* Team Cards */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <TeamCard
@@ -265,16 +275,6 @@ const Index = () => {
             onBuy={(amount) => handleBuyRequest("patriots", amount)}
           />
         </div>
-
-        {/* Claim Winnings Banner */}
-        {canClaim && winnerTeam && (
-          <ClaimWinnings
-            winnerTeam={winnerTeam}
-            winnerName={winnerTeam === "seahawks" ? "Seattle Seahawks" : "New England Patriots"}
-            winningShares={winningShares}
-            onClaim={handleClaim}
-          />
-        )}
 
         {/* Probability Bar Visual */}
         <div className="max-w-4xl mx-auto mt-8 animate-slide-up" style={{ animationDelay: "0.25s" }}>
