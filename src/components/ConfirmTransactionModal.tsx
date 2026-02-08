@@ -25,6 +25,7 @@ export interface ConfirmBuyDetails {
 interface ConfirmTransactionModalProps {
   details: ConfirmBuyDetails | null;
   open: boolean;
+  isFirstPurchase?: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void>;
 }
@@ -32,6 +33,7 @@ interface ConfirmTransactionModalProps {
 export const ConfirmTransactionModal = ({
   details,
   open,
+  isFirstPurchase = false,
   onClose,
   onConfirm,
 }: ConfirmTransactionModalProps) => {
@@ -43,7 +45,8 @@ export const ConfirmTransactionModal = ({
   const sharePrice = microVoiToVoi(details.sharePriceMicroVoi);
   const estimatedShares = sharePrice > 0 ? details.amountVoi / sharePrice : 0;
   const potentialPayout = estimatedShares * 1; // 1 VOI per winning share
-  const networkFee = 0.002; // ~0.001 per txn × 2 txns in group
+  const networkFee = 0.003; // ~0.001 per txn × 3 (pay + app call + margin)
+  const boxMbrFee = 0.0233; // box storage deposit for first purchase
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
@@ -105,6 +108,12 @@ export const ConfirmTransactionModal = ({
             />
             <Separator className="bg-border" />
             <Row label="Network Fee" value={`~${networkFee} VOI`} />
+            {isFirstPurchase && (
+              <>
+                <Separator className="bg-border" />
+                <Row label="Storage Deposit" value={`+${boxMbrFee} VOI`} />
+              </>
+            )}
           </div>
 
           {/* Disclaimer */}

@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import algosdk from "algosdk";
 import { getAlgodClient, APP_ID, isContractDeployed, MICRO_VOI } from "@/lib/voi";
+
+// Fee & MBR constants (microVoi)
+const BOX_MBR = 23_300;   // 2,500 + 400 * (44 + 8) — box creation deposit
+const BUY_FEE = 2_000;    // app call fee, covers 2 txns in group
+const CLAIM_FEE = 3_000;  // app call + inner payment + box deletion margin
 import contractSpec from "@/contracts/VoiSuperBowlWhaleMarket.arc56.json";
 
 export interface UserBalances {
@@ -145,6 +150,21 @@ export const useMarketContract = (userAddress?: string) => {
     }
   }, []);
 
+  // Check if a user's balance box exists (without throwing on 404)
+  const boxExists = async (algod: algosdk.Algodv2, prefix: string, address: string): Promise<boolean> => {
+    try {
+      const publicKey = algosdk.decodeAddress(address).publicKey;
+      const boxName = new Uint8Array([
+        ...new TextEncoder().encode(prefix),
+        ...publicKey,
+      ]);
+      await algod.getApplicationBoxByName(APP_ID, boxName).do();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   // Read a single box balance (returns 0 if box doesn't exist)
   const readBoxBalance = async (algod: algosdk.Algodv2, prefix: string, address: string): Promise<bigint> => {
     try {
@@ -196,15 +216,24 @@ export const useMarketContract = (userAddress?: string) => {
       const suggestedParams = await algod.getTransactionParams().do();
       const contract = getABIContract();
 
-      // App call params with increased fee to cover box storage MBR
-      const appCallParams = { ...suggestedParams, flatFee: true, fee: 2000 };
+      // App call params with fee to cover box storage MBR
+      const appCallParams = { ...suggestedParams, flatFee: true, fee: BUY_FEE };
+
+      // Check if user already has a box for this team; if not, pad payment with BOX_MBR
+      const prefix = wantSea ? "balances_sea" : "balances_pat";
+      const hasBox = await boxExists(algod, prefix, senderAddress);
+      const totalPayment = hasBox
+        ? paymentAmountMicroVoi
+        : paymentAmountMicroVoi + BigInt(BOX_MBR);
+
+      console.log("[buildBuySharesTxn] boxExists:", hasBox, "totalPayment:", totalPayment.toString());
 
       // 1. Payment transaction to the app address
       const appAddr = algosdk.getApplicationAddress(APP_ID);
       const payTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
         sender: senderAddress,
         receiver: appAddr,
-        amount: paymentAmountMicroVoi,
+        amount: totalPayment,
         suggestedParams,
       });
 
@@ -260,8 +289,8 @@ export const useMarketContract = (userAddress?: string) => {
       const contract = getABIContract();
       const method = contract.getMethodByName("claim_winnings");
 
-      // Increased fee to cover box storage reads during claim
-      const appCallParams = { ...suggestedParams, flatFee: true, fee: 2000 };
+      // Increased fee to cover app call + inner payment + potential box deletion
+      const appCallParams = { ...suggestedParams, flatFee: true, fee: CLAIM_FEE };
 
       const appCallTxn = algosdk.makeApplicationCallTxnFromObject({
         sender: senderAddress,
