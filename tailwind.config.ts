@@ -106,12 +106,38 @@ export default {
             transform: "translateY(0)",
           },
         },
+        "confetti-fall": {
+          "0%": {
+            opacity: "1",
+            transform: "translateY(-10px) rotate(0deg) scale(1)",
+          },
+          "100%": {
+            opacity: "0",
+            transform: "translateY(100px) rotate(720deg) scale(0.3)",
+          },
+        },
+        "confetti-burst": {
+          "0%": {
+            opacity: "0",
+            transform: "scale(0)",
+          },
+          "50%": {
+            opacity: "1",
+            transform: "scale(1.2)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "scale(1)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "slide-up": "slide-up 0.5s ease-out forwards",
+        "confetti-fall": "confetti-fall 2.5s ease-in forwards",
+        "confetti-burst": "confetti-burst 0.4s ease-out forwards",
       },
     },
   },
