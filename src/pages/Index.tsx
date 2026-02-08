@@ -79,6 +79,17 @@ const Index = () => {
   const winningShares = winnerTeam === "seahawks" ? userBalances.seaShares : winnerTeam === "patriots" ? userBalances.patShares : 0n;
   const canClaim = marketState.isResolved && isConnected && winnerTeam !== null && winningShares > 0n;
 
+  console.log("[Index] Claim check →", {
+    isResolved: marketState.isResolved,
+    winner: marketState.winner,
+    winnerTeam,
+    isConnected,
+    seaShares: userBalances.seaShares.toString(),
+    patShares: userBalances.patShares.toString(),
+    winningShares: winningShares.toString(),
+    canClaim,
+  });
+
   const handleClaim = async () => {
     if (!isConnected || !accountAddress) {
       toast.error("Please connect your wallet first.");

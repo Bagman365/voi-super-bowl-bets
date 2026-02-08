@@ -174,14 +174,19 @@ export const useMarketContract = (userAddress?: string) => {
         ...publicKey,
       ]);
       const box = await algod.getApplicationBoxByName(APP_ID, boxName).do();
-      const value = (box as any).value ?? (box as any).value;
+      const value = box.value;
+      console.log(`[readBoxBalance] ${prefix} raw value:`, value, "length:", value?.length);
       if (value instanceof Uint8Array && value.length === 8) {
         // Big-endian uint64
-        return new DataView(value.buffer, value.byteOffset, value.byteLength).getBigUint64(0);
+        const balance = new DataView(value.buffer, value.byteOffset, value.byteLength).getBigUint64(0);
+        console.log(`[readBoxBalance] ${prefix} balance:`, balance.toString());
+        return balance;
       }
+      console.warn(`[readBoxBalance] ${prefix} unexpected value format`);
       return 0n;
-    } catch {
+    } catch (err) {
       // Box doesn't exist = user has no shares
+      console.log(`[readBoxBalance] ${prefix} box not found (user has no shares for this team)`);
       return 0n;
     }
   };
@@ -195,6 +200,7 @@ export const useMarketContract = (userAddress?: string) => {
         readBoxBalance(algod, "balances_sea", address),
         readBoxBalance(algod, "balances_pat", address),
       ]);
+      console.log("[fetchUserBalances] seaShares:", seaShares.toString(), "patShares:", patShares.toString());
       setUserBalances({ seaShares, patShares });
     } catch (err) {
       console.error("Failed to fetch user balances:", err);
