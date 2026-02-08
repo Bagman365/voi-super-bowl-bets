@@ -85,13 +85,22 @@ const Index = () => {
       return;
     }
 
+    console.log("[handleClaim] Starting claim for address:", accountAddress);
+    console.log("[handleClaim] Winner:", winnerTeam, "Winning shares:", winningShares.toString());
+
     setTxPhase("building");
     try {
       const unsignedTxns = await buildClaimWinningsTxn(accountAddress);
+      console.log("[handleClaim] Built", unsignedTxns.length, "unsigned txn(s)");
+
       setTxPhase("signing");
       const signedTxns = await signTransactions(unsignedTxns);
+      console.log("[handleClaim] Signed", signedTxns.length, "txn(s)");
+
       setTxPhase("submitting");
       const txnIds = await postTransactions(signedTxns);
+      console.log("[handleClaim] Confirmed txn:", txnIds[0]);
+
       setTxPhase("confirming");
 
       await fetchMarketState();
@@ -103,7 +112,7 @@ const Index = () => {
       });
     } catch (error: any) {
       setTxPhase(null);
-      console.error("Claim failed:", error);
+      console.error("[handleClaim] FAILED:", error?.message, error);
       const { title, description } = classifyTransactionError(error);
       toast.error(title, { description });
     }
