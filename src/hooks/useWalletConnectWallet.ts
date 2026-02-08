@@ -194,6 +194,7 @@ export const useWalletConnectWallet = () => {
 
   const postTransactions = useCallback(
     async (stxns: Uint8Array[]): Promise<string[]> => {
+      const algodModule = await import("algosdk");
       const { getAlgodClient } = await import("@/lib/voi");
       const algod = getAlgodClient();
 
@@ -217,6 +218,10 @@ export const useWalletConnectWallet = () => {
 
         const txId = (response as any).txid ?? (response as any).txId ?? "";
         console.log("[postTransactions] Extracted txId:", txId);
+
+        // Wait for on-chain confirmation before declaring success
+        const confirmed = await algodModule.default.waitForConfirmation(algod, txId, 4);
+        console.log("[postTransactions] Transaction confirmed in round:", (confirmed as any)?.["confirmed-round"] ?? (confirmed as any)?.confirmedRound);
 
         return [txId];
       } catch (err: any) {
